@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CineGlota</title>
+
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- React, ReactDOM & Babel (para transpilar JSX no navegador) -->
+        <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        <!-- Axios (para requisições HTTP) -->
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+        <style>
+            /* Estilo para o corpo da página para garantir que o fundo ocupe toda a tela */
+            body {
+                background-color: #111827;
+                /* Cor de fundo base do bg-gray-900 */
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="root"></div>
+
+        <script type="text/babel">
+            // --- Configurações da API TMDB ---
+            const TMDB_API_KEY = 'e68628f5ff1c3314cd74c0ddba7a5819';
+            const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+            const TMDB_IMG_URL = 'https://image.tmdb.org/t/p/w500';
+
+            // --- Mapeamento de Gêneros, Idiomas e Plataformas ---
+            const languages = [
+                { code: 'de', name: 'Alemão' },
+                { code: 'fr', name: 'Francês' },
+                { code: 'it', name: 'Italiano' },
+                { code: 'ru', name: 'Russo' },
+                { code: 'zh', name: 'Mandarim' },
+            ];
+
+            const genres = [
+                { id: 28, name: 'Ação' },
+                { id: 12, name: 'Aventura' },
+                { id: 35, name: 'Comédia' },
+                { id: 18, name: 'Drama' },
+                { id: 10749, name: 'Romance' },
+                { id: 53, name: 'Suspense' },
+                { id: 27, name: 'Terror' },
+                { id: 878, name: 'Ficção Científica' },
+            ];
+
+            const streamingPlatforms = [
+                { id: '8', name: 'Netflix' },
+                { id: '337', name: 'Disney+' },
+            ];
+
+            // --- Componentes de Ícones (SVG) ---
+            const Icon = ({ children, size = 24, className = "" }) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {children}
+                </svg>
+            );
+            const ClapperboardIcon = ({ size, className }) => (<Icon size={size} className={className}><path d="M20.2 6 3.8 6.8A2 2 0 0 0 2 8.7V17a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-1.8-2Z" /><path d="m.1 4.9 3.3 3.3" /><path d="m7.2 2.3 3.3 3.3" /><path d="m14.3 2.3 3.3 3.3" /><path d="M.1 11.8 3.3 15" /></Icon>);
+            const LanguagesIcon = ({ size, className }) => (<Icon size={size} className={className}><path d="m5 8 6 6" /><path d="m4 14 6-6 2-3" /><path d="M2 5h12" /><path d="M7 2h1" /><path d="m22 22-5-10-5 10" /><path d="M14 18h6" /></Icon>);
+            const FilmIcon = ({ size, className }) => (<Icon size={size} className={className}><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M7 3v18" /><path d="M3 7.5h4" /><path d="M3 12h18" /><path d="M3 16.5h4" /><path d="M17 3v18" /><path d="M17 7.5h4" /><path d="M17 16.5h4" /></Icon>);
+            const TvIcon = ({ size, className }) => (<Icon size={size} className={className}><rect width="20" height="15" x="2" y="7" rx="2" ry="2" /><path d="M17 2H7l-5 5" /></Icon>);
+
+
+            // --- Componente: Cabeçalho ---
+            const Header = () => (
+                <header className="bg-gray-900 text-white shadow-lg">
+                    <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between">
+                        <div className="flex items-center space-x-3 mb-4 md:mb-0">
+                            <ClapperboardIcon size={40} className="text-indigo-400" />
+                            <div>
+                                <h1 className="text-3xl font-bold tracking-tight">CineGlota</h1>
+                                <p className="text-sm text-gray-400">Encontre filmes para praticar seu novo idioma.</p>
+                            </div>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                            Powered by <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-400">TMDB</a>
+                        </div>
+                    </div>
+                </header>
+            );
+
+            // --- Componente: Filtros ---
+            const Filters = ({ selectedLang, setSelectedLang, selectedGenre, setSelectedGenre, selectedPlatform, setSelectedPlatform }) => (
+                <div className="bg-gray-800 p-4 sticky top-0 z-10 shadow-md">
+                    <div className="container mx-auto flex flex-col lg:flex-row lg:items-center gap-y-4 gap-x-6">
+                        <div className="flex items-center space-x-2">
+                            <LanguagesIcon size={20} className="text-indigo-400" />
+                            <h3 className="font-semibold text-white">Idioma:</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {languages.map(lang => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => setSelectedLang(lang.code)}
+                                    className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${selectedLang === lang.code
+                                        ? 'bg-gradient-to-r from-indigo-500 to-rose-500 text-white shadow-md scale-105'
+                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                        }`}
+                                >
+                                    {lang.name}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center space-x-2 pt-4 lg:pt-0 lg:border-l lg:border-gray-700 lg:pl-6">
+                            <FilmIcon size={20} className="text-indigo-400" />
+                            <h3 className="font-semibold text-white">Gênero:</h3>
+                        </div>
+                        <select
+                            value={selectedGenre}
+                            onChange={(e) => setSelectedGenre(e.target.value)}
+                            className="w-full lg:w-auto bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="">Todos</option>
+                            {genres.map(genre => (<option key={genre.id} value={genre.id}>{genre.name}</option>))}
+                        </select>
+                        <div className="flex items-center space-x-2 pt-4 lg:pt-0 lg:border-l lg:border-gray-700 lg:pl-6">
+                            <TvIcon size={20} className="text-indigo-400" />
+                            <h3 className="font-semibold text-white">Streaming:</h3>
+                        </div>
+                        <select
+                            value={selectedPlatform}
+                            onChange={(e) => setSelectedPlatform(e.target.value)}
+                            className="w-full lg:w-auto bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="">Todos</option>
+                            {streamingPlatforms.map(platform => (<option key={platform.id} value={platform.id}>{platform.name}</option>))}
+                        </select>
+                    </div>
+                </div>
+            );
+
+            // --- Componente: Cartão do Filme ---
+            const MovieCard = ({ movie }) => (
+                <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg transform hover:-translate-y-2 transition-transform duration-300 group">
+                    <div className="relative">
+                        <img
+                            src={movie.poster_path ? `${TMDB_IMG_URL}${movie.poster_path}` : 'https://placehold.co/500x750/1f2937/9ca3af?text=Sem+Imagem'}
+                            alt={`Pôster do filme ${movie.title}`}
+                            className="w-full h-auto object-cover"
+                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/500x750/1f2937/9ca3af?text=Erro+Imagem' }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
+                            <p className="text-white text-sm text-center">{movie.overview || "Sinopse não disponível."}</p>
+                        </div>
+                    </div>
+                    <div className="p-4">
+                        <h3 className="font-bold text-white text-lg truncate" title={movie.title}>{movie.title}</h3>
+                        <div className="flex items-center justify-between text-sm text-gray-400 mt-2">
+                            <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
+                            <div className="flex items-center">
+                                <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                <span>{movie.vote_average.toFixed(1)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // --- Componente: Lista de Filmes ---
+            const MovieList = ({ movies, loading, error }) => {
+                if (loading) {
+                    return <div className="text-center py-20 text-white"><p>Buscando filmes...</p></div>;
+                }
+                if (error) {
+                    return <div className="text-center py-20 text-red-400"><p>Ocorreu um erro: {error}</p></div>;
+                }
+                if (movies.length === 0) {
+                    return <div className="text-center py-20 text-white"><p>Nenhum filme encontrado com os filtros selecionados.</p></div>;
+                }
+                return (
+                    <div className="container mx-auto px-4 py-8">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                            {movies.map(movie => <MovieCard key={movie.id} movie={movie} />)}
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- Componente Principal: App ---
+            function App() {
+                const { useState, useEffect } = React;
+                const [movies, setMovies] = useState([]);
+                const [selectedLang, setSelectedLang] = useState('de');
+                const [selectedGenre, setSelectedGenre] = useState('');
+                const [selectedPlatform, setSelectedPlatform] = useState('');
+                const [loading, setLoading] = useState(true);
+                const [error, setError] = useState(null);
+
+                useEffect(() => {
+                    const fetchMovies = async () => {
+                        setLoading(true);
+                        setError(null);
+                        let url = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&sort_by=vote_average.desc&vote_count.gte=200&include_adult=false&include_video=false&page=1&watch_region=BR`;
+                        if (selectedLang) url += `&with_original_language=${selectedLang}`;
+                        if (selectedGenre) url += `&with_genres=${selectedGenre}`;
+                        if (selectedPlatform) {
+                            url += `&with_watch_providers=${selectedPlatform}`;
+                        } else {
+                            const allProviderIds = streamingPlatforms.map(p => p.id).join('|');
+                            url += `&with_watch_providers=${allProviderIds}`;
+                        }
+                        try {
+                            const response = await axios.get(url);
+                            setMovies(response.data.results);
+                        } catch (err) {
+                            console.error('Erro ao obter filmes: ', err);
+                            setError('Não foi possível carregar os filmes. Tente novamente mais tarde.');
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
+                    fetchMovies();
+                }, [selectedLang, selectedGenre, selectedPlatform]);
+
+                return (
+                    <div className="bg-gray-900 min-h-screen font-sans">
+                        <Header />
+                        <Filters
+                            selectedLang={selectedLang}
+                            setSelectedLang={setSelectedLang}
+                            selectedGenre={selectedGenre}
+                            setSelectedGenre={setSelectedGenre}
+                            selectedPlatform={selectedPlatform}
+                            setSelectedPlatform={setSelectedPlatform}
+                        />
+                        <main>
+                            <MovieList movies={movies} loading={loading} error={error} />
+                        </main>
+                        <footer className="text-center py-4 text-gray-500 text-sm">
+                            <p>&copy; {new Date().getFullYear()} CineGlota. Todos os direitos reservados.</p>
+                        </footer>
+                    </div>
+                );
+            }
+
+            // --- Renderiza a aplicação React no DOM ---
+            ReactDOM.render(<App />, document.getElementById('root'));
+        </script>
+    </body>
+
+</html>

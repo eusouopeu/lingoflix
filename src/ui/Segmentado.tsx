@@ -20,7 +20,7 @@ export function Segmentado<T extends string>({
           aria-pressed={o.valor === valor}
           onClick={() => onChange(o.valor)}
           className={cn(
-            "h-10 flex-1 cursor-pointer rounded-[12px] text-sm font-semibold transition-colors duration-150",
+            "h-9 flex-1 cursor-pointer rounded-[12px] text-xs font-semibold transition-colors duration-150",
             o.valor === valor ? "bg-card text-caneta" : "text-sub"
           )}
         >

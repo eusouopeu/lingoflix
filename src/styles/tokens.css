@@ -1,7 +1,7 @@
 /* Tokens de design (cores, formas). Nunca cor hardcoded fora daqui.
    Roxo = escala `purple` do Tailwind (_shared/design-standards.md): 700 sólido,
    500 seleção, 300/200/100 fundos claros. Tema escuro segue o sistema e
-   redefine os MESMOS nomes. Elevação é cor de fundo, não sombra. */
+   redefine os MESMOS nomes; o tema vem de data-tema no <html> (src/lib/tema.ts). Elevação é cor de fundo, não sombra. */
 @font-face {
   font-family: "Montserrat";
   src: url("/fonts/Montserrat-Variable.woff2") format("woff2");
@@ -12,7 +12,10 @@
 :root {
   --paper: #ffffff;
   --card: #ffffff;
-  --card-2: #f1f2f6;
+  --card-2: #eef1f6;
+  /* cartão de título (frente) e painel da sinopse (verso), um degrau abaixo */
+  --cartao: #e4e9f1;
+  --cartao-verso: #cdd6e4;
   --line: #e3e2e8;
   --ink: #1e1b26;
   --sub: #5b6472;
@@ -25,6 +28,18 @@
   --ok: #157a45;
   --erro: #b23a2f;
   --foco: #2f6be0;
+  /* pílula da nota e ícone do trailer no cartão (pedido do Pedro, mock 02/10) */
+  --nota: #15803d;
+  --trailer: #d97706;
+  /* etiquetas de gênero: texto branco sobre tons 600–700 (contraste AA) */
+  --tag-azul: #2563eb;
+  --tag-ambar: #b45309;
+  --tag-verde: #15803d;
+  --tag-vermelho: #b91c1c;
+  --tag-ciano: #0e7490;
+  --tag-roxo: #7e22ce;
+  --tag-rosa: #be185d;
+  --tag-cinza: #475569;
   --card-blur: rgba(255, 255, 255, 0.88);
   --radius: 16px;
   --radius-sm: 8px;
@@ -33,23 +48,25 @@
   --tabbar-h: 60px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #14181c;
-    --card: #1d2226;
-    --card-2: #262c31;
-    --line: #33383d;
-    --ink: #e9eae5;
-    --sub: #a3abb1;
-    --caneta: #a855f7;
-    --caneta-soft: #3b0764;
-    --caneta-200: #581c87;
-    --caneta-300: #6b21a8;
-    --caneta-500: #9333ea;
-    --on-caneta: #ffffff;
-    --ok: #4fae7c;
-    --erro: #e2776a;
-    --foco: #6e9bf2;
-    --card-blur: rgba(20, 24, 28, 0.88);
-  }
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+  --paper: #14181c;
+  --card: #1d2226;
+  --card-2: #262c31;
+  --cartao: #20262b;
+  --cartao-verso: #2d353c;
+  --line: #33383d;
+  --ink: #e9eae5;
+  --sub: #a3abb1;
+  --caneta: #a855f7;
+  --caneta-soft: #3b0764;
+  --caneta-200: #581c87;
+  --caneta-300: #6b21a8;
+  --caneta-500: #9333ea;
+  --on-caneta: #ffffff;
+  --ok: #4fae7c;
+  --erro: #e2776a;
+  --foco: #6e9bf2;
+  --trailer: #f59e0b;
+  --card-blur: rgba(20, 24, 28, 0.88);
 }

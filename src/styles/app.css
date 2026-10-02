@@ -22,6 +22,18 @@
   --color-ok: var(--ok);
   --color-erro: var(--erro);
   --color-foco: var(--foco);
+  --color-cartao: var(--cartao);
+  --color-cartao-verso: var(--cartao-verso);
+  --color-nota: var(--nota);
+  --color-trailer: var(--trailer);
+  --color-tag-azul: var(--tag-azul);
+  --color-tag-ambar: var(--tag-ambar);
+  --color-tag-verde: var(--tag-verde);
+  --color-tag-vermelho: var(--tag-vermelho);
+  --color-tag-ciano: var(--tag-ciano);
+  --color-tag-roxo: var(--tag-roxo);
+  --color-tag-rosa: var(--tag-rosa);
+  --color-tag-cinza: var(--tag-cinza);
   --radius-app: var(--radius);
   --radius-app-sm: var(--radius-sm);
   --font-sans: "Montserrat", -apple-system, sans-serif;

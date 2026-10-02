@@ -19,6 +19,10 @@ export interface ItemLista {
   status: Status;
   notas: string;
   atualizado: number;
+  generos: number[];
+  plataformas: string[];
+  nota: number;
+  ano: number | null;
 }
 
 export interface RepoLista {
@@ -28,6 +32,9 @@ export interface RepoLista {
 }
 
 const recentes = (a: ItemLista, b: ItemLista) => b.atualizado - a.atualizado;
+
+// Itens gravados pela versão 1 não tinham gêneros/plataformas/nota/ano.
+const completar = (i: ItemLista): ItemLista => ({ ...i, generos: i.generos ?? [], plataformas: i.plataformas ?? [], nota: i.nota ?? 0, ano: i.ano ?? null });
 
 const CHAVE_WEB = "lingoflix.lista";
 
@@ -42,7 +49,7 @@ export function criarListaWeb(): RepoLista {
   const gravar = (d: Record<string, ItemLista>) => localStorage.setItem(CHAVE_WEB, JSON.stringify(d));
   return {
     async todos() {
-      return Object.values(ler()).sort(recentes);
+      return Object.values(ler()).map(completar).sort(recentes);
     },
     async salvar(item) {
       gravar({ ...ler(), [item.chave]: item });
@@ -55,7 +62,7 @@ export function criarListaWeb(): RepoLista {
   };
 }
 
-const COLUNAS = ["chave", "id", "tipo", "titulo", "titulo_original", "poster", "idioma", "nivel", "status", "notas", "atualizado"];
+const COLUNAS = ["chave", "id", "tipo", "titulo", "titulo_original", "poster", "idioma", "nivel", "status", "notas", "atualizado", "generos", "plataformas", "nota", "ano"];
 
 async function criarListaSQLite(): Promise<RepoLista> {
   const { CapacitorSQLite, SQLiteConnection } = await import("@capacitor-community/sqlite");
@@ -75,6 +82,17 @@ async function criarListaSQLite(): Promise<RepoLista> {
     notas TEXT NOT NULL DEFAULT '',
     atualizado INTEGER NOT NULL
   );`);
+  // migração da versão 1: colunas novas para filtrar e ordenar a lista
+  const existentes = new Set(((await db.query("PRAGMA table_info(lista)")).values ?? []).map((c) => c.name));
+  const novas: [string, string][] = [
+    ["generos", "TEXT NOT NULL DEFAULT '[]'"],
+    ["plataformas", "TEXT NOT NULL DEFAULT '[]'"],
+    ["nota", "REAL NOT NULL DEFAULT 0"],
+    ["ano", "INTEGER"],
+  ];
+  for (const [nome, def] of novas) {
+    if (!existentes.has(nome)) await db.execute(`ALTER TABLE lista ADD COLUMN ${nome} ${def};`);
+  }
   return {
     async todos() {
       const r = await db.query("SELECT * FROM lista ORDER BY atualizado DESC");
@@ -90,11 +108,16 @@ async function criarListaSQLite(): Promise<RepoLista> {
         status: v.status,
         notas: v.notas,
         atualizado: v.atualizado,
+        generos: JSON.parse(v.generos || "[]"),
+        plataformas: JSON.parse(v.plataformas || "[]"),
+        nota: v.nota ?? 0,
+        ano: v.ano ?? null,
       }));
     },
     async salvar(i) {
       await db.run(`INSERT OR REPLACE INTO lista (${COLUNAS.join(",")}) VALUES (${COLUNAS.map(() => "?").join(",")})`, [
         i.chave, i.id, i.tipo, i.titulo, i.tituloOriginal, i.poster, i.idioma, i.nivel, i.status, i.notas, i.atualizado,
+        JSON.stringify(i.generos), JSON.stringify(i.plataformas), i.nota, i.ano,
       ]);
     },
     async remover(chave) {

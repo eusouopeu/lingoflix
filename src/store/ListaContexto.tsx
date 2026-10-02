@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import type { Titulo } from "../lib/tmdb";
+import type { Detalhes, Titulo } from "../lib/tmdb";
 import { abrirLista, type ItemLista, type RepoLista, type Status } from "./lista";
 
 interface Contexto {
   itens: ItemLista[];
   statusDe: (t: Pick<Titulo, "tipo" | "id">) => Status | null;
-  alternar: (t: Titulo, status: Status) => void;
+  alternar: (t: Titulo, status: Status, det?: Detalhes | null) => void;
   atualizar: (item: ItemLista, mudanca: Partial<ItemLista>) => void;
   remover: (chave: string) => void;
 }
@@ -33,7 +33,7 @@ export function ListaProvider({ children }: { children: ReactNode }) {
   const valor: Contexto = {
     itens,
     statusDe: (t) => itens.find((i) => i.chave === chaveDe(t))?.status ?? null,
-    alternar: (t, status) => {
+    alternar: (t, status, det) => {
       const atual = itens.find((i) => i.chave === chaveDe(t));
       if (atual?.status === status) return valor.remover(atual.chave);
       gravar({
@@ -48,6 +48,10 @@ export function ListaProvider({ children }: { children: ReactNode }) {
         status,
         notas: atual?.notas ?? "",
         atualizado: Date.now(),
+        generos: t.generos,
+        plataformas: det ? det.plataformas.map((p) => String(p.id)) : (atual?.plataformas ?? []),
+        nota: t.nota,
+        ano: t.ano,
       });
     },
     atualizar: (item, mudanca) => gravar({ ...item, ...mudanca, atualizado: Date.now() }),

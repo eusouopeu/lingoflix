@@ -3,6 +3,10 @@
 import { BookmarkIcon, CheckCircleIcon, FilmIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { PencilSquareIcon as PencilSolido } from "@heroicons/react/24/solid";
 import { useState } from "react";
+import { Cabecalho } from "../components/Cabecalho";
+import { contarAjustes, PainelFiltros } from "../components/PainelFiltros";
+import { ORDENS_LISTA } from "../lib/catalogo";
+import { filtrarLista, type FiltrosLista } from "../lib/filtros";
 import { IMG } from "../lib/tmdb";
 import { useLista } from "../store/ListaContexto";
 import type { ItemLista, Status } from "../store/lista";
@@ -13,14 +17,21 @@ import { SeloNivel } from "../ui/SeloNivel";
 export function MinhaLista() {
   const { itens } = useLista();
   const [aba, setAba] = useState<Status>("quero");
-  const daAba = itens.filter((i) => i.status === aba);
-  const conta = (s: Status) => itens.filter((i) => i.status === s).length;
+  const [f, setF] = useState<FiltrosLista>({ tipo: null, idioma: null, nivel: null, generos: [], plataformas: [], ordem: "adicionado" });
+  const [ajustes, setAjustes] = useState(false);
+  const filtrados = filtrarLista(itens, f);
+  const daAba = filtrados.filter((i) => i.status === aba);
+  const filtrando = daAba.length < itens.filter((i) => i.status === aba).length;
+  const conta = (s: Status) => filtrados.filter((i) => i.status === s).length;
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-card-blur pt-[var(--safe-top)] backdrop-blur-md">
-        <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-3 pb-3">
-          <h1 className="text-2xl font-bold tracking-tight">Minha lista</h1>
+      <Cabecalho
+        titulo="Minha lista"
+        ajustes={ajustes}
+        onAjustes={() => setAjustes(!ajustes)}
+        ajustesAtivos={contarAjustes(f, "adicionado")}
+      >
           <Segmentado
             rotulo="Situação"
             valor={aba}
@@ -30,13 +41,13 @@ export function MinhaLista() {
               { valor: "visto", nome: `Já vi · ${conta("visto")}` },
             ]}
           />
-        </div>
-      </header>
+          <PainelFiltros id="lista" valores={f} onChange={setF} ajustes={ajustes} ordens={ORDENS_LISTA} permiteTodos />
+      </Cabecalho>
       <main className="mx-auto max-w-2xl px-4 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+24px)]">
         {daAba.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center text-sub">
             <FilmIcon className="size-10" aria-hidden />
-            <p>{aba === "quero" ? "Marque títulos com o marcador para vê-los aqui." : "Títulos marcados como vistos aparecem aqui."}</p>
+            <p>{filtrando ? "Nenhum título da lista com esses filtros." : aba === "quero" ? "Marque títulos com o marcador para vê-los aqui." : "Títulos marcados como vistos aparecem aqui."}</p>
           </div>
         ) : (
           <ul className="flex flex-col gap-4">

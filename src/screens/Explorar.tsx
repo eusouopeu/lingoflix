@@ -1,30 +1,21 @@
-import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
-import { AdjustmentsHorizontalIcon as AjustesSolido } from "@heroicons/react/24/solid";
 import { useEffect, useState } from "react";
+import { Cabecalho } from "../components/Cabecalho";
 import { CartaoEsqueleto, CartaoTitulo } from "../components/CartaoTitulo";
-import { GENEROS, IDIOMAS, ORDENS, PLATAFORMAS, type Ordem, type Tipo } from "../lib/catalogo";
-import { rotuloNivel, type Nivel } from "../lib/nivel";
+import { contarAjustes, PainelFiltros, type ValoresFiltro } from "../components/PainelFiltros";
+import { ORDENS, type Ordem } from "../lib/catalogo";
 import { buscarPagina, type Titulo } from "../lib/tmdb";
-import { Ajuda } from "../ui/Ajuda";
-import { BotaoIcone } from "../ui/BotaoIcone";
-import { Chip } from "../ui/Chip";
-import { Segmentado } from "../ui/Segmentado";
-import { Selecao } from "../ui/Selecao";
 
-const TIPOS: { valor: Tipo; nome: string }[] = [
-  { valor: "filme", nome: "Filmes" },
-  { valor: "serie", nome: "Séries" },
-];
-
-const GRADE = "grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5";
+export const GRADE = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5";
 
 export function Explorar() {
-  const [tipo, setTipo] = useState<Tipo>("filme");
-  const [idioma, setIdioma] = useState("en");
-  const [nivel, setNivel] = useState<Nivel | null>(null);
-  const [genero, setGenero] = useState("");
-  const [plataforma, setPlataforma] = useState("");
-  const [ordem, setOrdem] = useState<Ordem>("popularidade");
+  const [f, setF] = useState<ValoresFiltro<Ordem>>({
+    tipo: "filme",
+    idioma: "en",
+    nivel: null,
+    generos: [],
+    plataformas: [],
+    ordem: "popularidade",
+  });
   const [ajustes, setAjustes] = useState(false);
 
   const [itens, setItens] = useState<Titulo[]>([]);
@@ -33,11 +24,13 @@ export function Explorar() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Filtro novo recomeça da página 1.
+  // o nível filtra localmente; o resto refaz a busca a partir da página 1
+  const chaveBusca = JSON.stringify([f.tipo, f.idioma, f.generos, f.plataformas, f.ordem]);
+
   useEffect(() => {
     setItens([]);
     setPagina(1);
-  }, [tipo, idioma, genero, plataforma, ordem]);
+  }, [chaveBusca]);
 
   useEffect(() => {
     // AbortController: resposta de um filtro antigo não sobrescreve a do novo.
@@ -45,14 +38,15 @@ export function Explorar() {
     setCarregando(true);
     setErro(null);
     buscarPagina(
-      { tipo, idioma, ordem, pagina, genero: genero ? Number(genero) : undefined, plataforma: plataforma || undefined },
+      { tipo: f.tipo!, idioma: f.idioma!, ordem: f.ordem, pagina, generos: f.generos, plataformas: f.plataformas },
       ctl.signal
     )
       .then((r) => {
         setTotalPaginas(r.totalPaginas);
         setItens((xs) => {
+          if (pagina === 1) return r.itens;
           const vistos = new Set(xs.map((x) => x.id));
-          return [...(pagina === 1 ? [] : xs), ...r.itens.filter((x) => pagina === 1 || !vistos.has(x.id))];
+          return [...xs, ...r.itens.filter((x) => !vistos.has(x.id))];
         });
         setCarregando(false);
       })
@@ -63,88 +57,21 @@ export function Explorar() {
         setCarregando(false);
       });
     return () => ctl.abort();
-  }, [tipo, idioma, genero, plataforma, ordem, pagina]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chaveBusca, pagina]);
 
-  const visiveis = nivel === null ? itens : itens.filter((t) => t.nivel === nivel);
-  const ajustesAtivos = [genero, plataforma, ordem !== "popularidade"].filter(Boolean).length;
-  const temMais = pagina < totalPaginas;
+  const visiveis = f.nivel === null ? itens : itens.filter((t) => t.nivel === f.nivel);
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-card-blur pt-[var(--safe-top)] backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 pt-3 pb-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold tracking-tight">CineGlota</h1>
-            <span className="relative">
-              <BotaoIcone
-                icone={AdjustmentsHorizontalIcon}
-                iconeAtivo={AjustesSolido}
-                ativo={ajustes}
-                rotulo="Gênero, streaming e ordem"
-                onClick={() => setAjustes(!ajustes)}
-              />
-              {ajustesAtivos > 0 && (
-                <span className="pointer-events-none absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-caneta text-[10px] font-bold text-on-caneta">
-                  {ajustesAtivos}
-                </span>
-              )}
-            </span>
-          </div>
-
-          {ajustes && (
-            <div className="flex animate-surge flex-wrap gap-3">
-              <Selecao
-                rotulo="Gênero"
-                valor={genero}
-                onChange={setGenero}
-                opcoes={[{ valor: "", nome: "Todos" }, ...GENEROS[tipo].map((g) => ({ valor: String(g.id), nome: g.nome }))]}
-              />
-              <Selecao
-                rotulo="Streaming"
-                valor={plataforma}
-                onChange={setPlataforma}
-                opcoes={[{ valor: "", nome: "Todos" }, ...PLATAFORMAS.map((p) => ({ valor: p.id, nome: p.nome }))]}
-              />
-              <Selecao rotulo="Ordem" valor={ordem} onChange={(v) => setOrdem(v as Ordem)} opcoes={ORDENS} />
-            </div>
-          )}
-
-          <Segmentado
-            rotulo="Tipo"
-            opcoes={TIPOS}
-            valor={tipo}
-            onChange={(v) => {
-              setTipo(v);
-              setGenero("");
-            }}
-          />
-
-          <div role="group" aria-label="Idioma" className="sem-barra -mx-4 flex gap-2 overflow-x-auto px-4">
-            {IDIOMAS.map((l) => (
-              <Chip key={l.codigo} ativo={idioma === l.codigo} rotulo={l.nome} onClick={() => setIdioma(l.codigo)}>
-                {l.codigo.toUpperCase()}
-              </Chip>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div role="group" aria-label="Nível" className="sem-barra -ml-4 flex flex-1 gap-2 overflow-x-auto pl-4">
-              <Chip ativo={nivel === null} onClick={() => setNivel(null)}>
-                Todos
-              </Chip>
-              {([0, 1, 2] as Nivel[]).map((n) => (
-                <Chip key={n} ativo={nivel === n} onClick={() => setNivel(nivel === n ? null : n)}>
-                  {rotuloNivel(n, idioma)}
-                </Chip>
-              ))}
-            </div>
-            <Ajuda rotulo="Sobre o nível">
-              Nível estimado pelo gênero e pela época do título: animação e família tendem a ter fala simples; drama,
-              história e crime concentram vocabulário denso. {idioma === "zh" ? "Mandarim usa a escala HSK." : "Escala QECR."}
-            </Ajuda>
-          </div>
-        </div>
-      </header>
+      <Cabecalho
+        titulo="CineGlota"
+        ajustes={ajustes}
+        onAjustes={() => setAjustes(!ajustes)}
+        ajustesAtivos={contarAjustes(f, "popularidade")}
+      >
+        <PainelFiltros id="explorar" valores={f} onChange={setF} ajustes={ajustes} ordens={ORDENS} permiteTodos={false} />
+      </Cabecalho>
 
       <main className="mx-auto max-w-5xl px-4 pt-2 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+24px)]">
         {erro ? (
@@ -156,7 +83,7 @@ export function Explorar() {
             {visiveis.map((t) => (
               <CartaoTitulo key={`${t.tipo}-${t.id}`} t={t} />
             ))}
-            {carregando && Array.from({ length: pagina === 1 ? 10 : 4 }, (_, i) => <CartaoEsqueleto key={i} />)}
+            {carregando && Array.from({ length: pagina === 1 ? 6 : 4 }, (_, i) => <CartaoEsqueleto key={i} />)}
           </div>
         )}
 
@@ -166,7 +93,7 @@ export function Explorar() {
           </p>
         )}
 
-        {!carregando && !erro && temMais && (
+        {!carregando && !erro && pagina < totalPaginas && (
           <button
             type="button"
             onClick={() => setPagina((p) => p + 1)}

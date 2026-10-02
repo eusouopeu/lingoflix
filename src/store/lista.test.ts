@@ -12,6 +12,10 @@ const item = (id: number, status: ItemLista["status"]): ItemLista => ({
   status,
   notas: "",
   atualizado: id,
+  generos: [35],
+  plataformas: ["8"],
+  nota: 7,
+  ano: 2001,
 });
 
 describe("lista pessoal (web)", () => {
@@ -25,7 +29,7 @@ describe("lista pessoal (web)", () => {
     const b = criarListaWeb();
     const todos = await b.todos();
     expect(todos).toHaveLength(2);
-    expect(todos.find((i) => i.id === 1)).toMatchObject({ status: "visto", notas: "bonjour" });
+    expect(todos.find((i) => i.id === 1)).toMatchObject({ status: "visto", notas: "bonjour", generos: [35], plataformas: ["8"] });
     await b.remover("filme-2");
     expect((await criarListaWeb().todos()).map((i) => i.id)).toEqual([1]);
   });

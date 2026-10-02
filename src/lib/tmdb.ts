@@ -18,6 +18,7 @@ export interface Titulo {
   ano: number | null;
   nota: number;
   nivel: Nivel;
+  generos: number[];
 }
 
 export interface Filtro {
@@ -25,8 +26,8 @@ export interface Filtro {
   idioma: string;
   ordem: Ordem;
   pagina: number;
-  genero?: number;
-  plataforma?: string;
+  generos: number[];
+  plataformas: string[];
 }
 
 const CAMINHO: Record<Tipo, string> = { filme: "movie", serie: "tv" };
@@ -44,11 +45,12 @@ export function urlDescobrir(f: Filtro, chave = CHAVE): string {
     page: String(f.pagina),
     watch_region: "BR",
     with_original_language: f.idioma,
-    with_watch_providers: f.plataforma ?? PLATAFORMAS.map((x) => x.id).join("|"),
+    with_watch_providers: (f.plataformas.length ? f.plataformas : PLATAFORMAS.map((x) => x.id)).join("|"),
     with_watch_monetization_types: "flatrate",
   });
   if (f.ordem === "lancamento") p.set(`${DATA[f.tipo]}.lte`, new Date().toISOString().slice(0, 10));
-  if (f.genero) p.set("with_genres", String(f.genero));
+  // "|" = OU no TMDB (vírgula seria E)
+  if (f.generos.length) p.set("with_genres", f.generos.join("|"));
   return `${BASE}/discover/${CAMINHO[f.tipo]}?${p}`;
 }
 
@@ -81,6 +83,7 @@ function normalizar(b: Bruto, tipo: Tipo): Titulo {
     ano,
     nota: b.vote_average,
     nivel: calcularNivel({ generos: b.genre_ids, ano }),
+    generos: b.genre_ids,
   };
 }
 

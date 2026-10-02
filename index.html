@@ -6,6 +6,12 @@
     <meta name="theme-color" content="#7e22ce" />
     <link rel="preload" href="/fonts/Montserrat-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <title>CineGlota</title>
+    <script>
+      try {
+        var t = localStorage.getItem("lingoflix.tema");
+        document.documentElement.dataset.tema = t || (matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro");
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

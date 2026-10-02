@@ -21,7 +21,7 @@ export function Chip({
       title={rotulo}
       onClick={onClick}
       className={cn(
-        "h-11 min-w-11 shrink-0 cursor-pointer rounded-full px-4 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-95",
+        "h-9 min-w-10 shrink-0 cursor-pointer rounded-full px-3 text-xs font-semibold transition-[background-color,color,transform] duration-150 active:scale-95",
         ativo ? "bg-caneta-500 text-on-caneta" : "bg-card-2 text-ink"
       )}
     >

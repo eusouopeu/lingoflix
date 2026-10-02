@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Paleta travada: só os tokens do projeto existem como cor no Tailwind. */
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-card-blur: var(--card-blur);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-sub: var(--sub);
+  --color-caneta: var(--caneta);
+  --color-caneta-soft: var(--caneta-soft);
+  --color-caneta-200: var(--caneta-200);
+  --color-caneta-300: var(--caneta-300);
+  --color-caneta-500: var(--caneta-500);
+  --color-on-caneta: var(--on-caneta);
+  --color-ok: var(--ok);
+  --color-erro: var(--erro);
+  --color-foco: var(--foco);
+  --radius-app: var(--radius);
+  --radius-app-sm: var(--radius-sm);
+  --font-sans: "Montserrat", -apple-system, sans-serif;
+  --animate-surge: surge 180ms ease-out;
+  @keyframes surge {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--caneta);
+    outline-offset: 2px;
+  }
+  select:focus-visible,
+  textarea:focus-visible {
+    outline-color: var(--foco);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+.sem-barra {
+  scrollbar-width: none;
+}
+.sem-barra::-webkit-scrollbar {
+  display: none;
+}

@@ -1,0 +1,13 @@
+{
+  "appId": "com.pedro.lingoflix",
+  "appName": "CineGlota",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "CapacitorSQLite": {
+      "androidIsEncryption": false
+    }
+  }
+}

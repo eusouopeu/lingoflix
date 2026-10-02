@@ -1,0 +1,55 @@
+/* Tokens de design (cores, formas). Nunca cor hardcoded fora daqui.
+   Roxo = escala `purple` do Tailwind (_shared/design-standards.md): 700 sólido,
+   500 seleção, 300/200/100 fundos claros. Tema escuro segue o sistema e
+   redefine os MESMOS nomes. Elevação é cor de fundo, não sombra. */
+@font-face {
+  font-family: "Montserrat";
+  src: url("/fonts/Montserrat-Variable.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+:root {
+  --paper: #ffffff;
+  --card: #ffffff;
+  --card-2: #f1f2f6;
+  --line: #e3e2e8;
+  --ink: #1e1b26;
+  --sub: #5b6472;
+  --caneta: #7e22ce;
+  --caneta-soft: #f3e8ff;
+  --caneta-200: #e9d5ff;
+  --caneta-300: #d8b4fe;
+  --caneta-500: #a855f7;
+  --on-caneta: #ffffff;
+  --ok: #157a45;
+  --erro: #b23a2f;
+  --foco: #2f6be0;
+  --card-blur: rgba(255, 255, 255, 0.88);
+  --radius: 16px;
+  --radius-sm: 8px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: 60px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14181c;
+    --card: #1d2226;
+    --card-2: #262c31;
+    --line: #33383d;
+    --ink: #e9eae5;
+    --sub: #a3abb1;
+    --caneta: #a855f7;
+    --caneta-soft: #3b0764;
+    --caneta-200: #581c87;
+    --caneta-300: #6b21a8;
+    --caneta-500: #9333ea;
+    --on-caneta: #ffffff;
+    --ok: #4fae7c;
+    --erro: #e2776a;
+    --foco: #6e9bf2;
+    --card-blur: rgba(20, 24, 28, 0.88);
+  }
+}

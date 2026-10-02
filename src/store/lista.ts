@@ -5,6 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import type { Tipo } from "../lib/catalogo";
 import type { Nivel } from "../lib/nivel";
 import type { Titulo } from "../lib/tmdb";
+import { migrarNotas, type Par } from "../lib/vocabulario";
 
 export type Status = "quero" | "visto";
 
@@ -18,7 +19,7 @@ export interface ItemLista {
   idioma: string;
   nivel: Nivel;
   status: Status;
-  notas: string;
+  vocabulario: Par[];
   atualizado: number;
   generos: number[];
   plataformas: string[];
@@ -36,7 +37,11 @@ export interface RepoLista {
 const recentes = (a: ItemLista, b: ItemLista) => b.atualizado - a.atualizado;
 
 // Itens de versões anteriores não tinham gêneros/plataformas/nota/ano/sinopse.
-const completar = (i: ItemLista): ItemLista => ({ ...i, generos: i.generos ?? [], plataformas: i.plataformas ?? [], nota: i.nota ?? 0, ano: i.ano ?? null, sinopse: i.sinopse ?? "" });
+type Antigo = ItemLista & { notas?: string };
+const completar = ({ notas, ...i }: Antigo): ItemLista => ({
+  ...i,
+  vocabulario: i.vocabulario ?? migrarNotas(notas ?? ""),
+  generos: i.generos ?? [], plataformas: i.plataformas ?? [], nota: i.nota ?? 0, ano: i.ano ?? null, sinopse: i.sinopse ?? "" });
 
 const CHAVE_WEB = "lingoflix.lista";
 
@@ -51,7 +56,7 @@ export function criarListaWeb(): RepoLista {
   const gravar = (d: Record<string, ItemLista>) => localStorage.setItem(CHAVE_WEB, JSON.stringify(d));
   return {
     async todos() {
-      return Object.values(ler()).map(completar).sort(recentes);
+      return Object.values(ler() as Record<string, Antigo>).map(completar).sort(recentes);
     },
     async salvar(item) {
       gravar({ ...ler(), [item.chave]: item });
@@ -64,7 +69,7 @@ export function criarListaWeb(): RepoLista {
   };
 }
 
-const COLUNAS = ["chave", "id", "tipo", "titulo", "titulo_original", "poster", "idioma", "nivel", "status", "notas", "atualizado", "generos", "plataformas", "nota", "ano", "sinopse"];
+const COLUNAS = ["chave", "id", "tipo", "titulo", "titulo_original", "poster", "idioma", "nivel", "status", "notas", "atualizado", "generos", "plataformas", "nota", "ano", "sinopse", "vocabulario"];
 
 async function criarListaSQLite(): Promise<RepoLista> {
   const { CapacitorSQLite, SQLiteConnection } = await import("@capacitor-community/sqlite");
@@ -92,6 +97,8 @@ async function criarListaSQLite(): Promise<RepoLista> {
     ["nota", "REAL NOT NULL DEFAULT 0"],
     ["ano", "INTEGER"],
     ["sinopse", "TEXT NOT NULL DEFAULT ''"],
+    // vocabulário em pares substitui as anotações livres (coluna notas fica só para migrar)
+    ["vocabulario", "TEXT"],
   ];
   for (const [nome, def] of novas) {
     if (!existentes.has(nome)) await db.execute(`ALTER TABLE lista ADD COLUMN ${nome} ${def};`);
@@ -109,7 +116,7 @@ async function criarListaSQLite(): Promise<RepoLista> {
         idioma: v.idioma,
         nivel: v.nivel,
         status: v.status,
-        notas: v.notas,
+        vocabulario: v.vocabulario ? JSON.parse(v.vocabulario) : migrarNotas(v.notas ?? ""),
         atualizado: v.atualizado,
         generos: JSON.parse(v.generos || "[]"),
         plataformas: JSON.parse(v.plataformas || "[]"),
@@ -120,8 +127,8 @@ async function criarListaSQLite(): Promise<RepoLista> {
     },
     async salvar(i) {
       await db.run(`INSERT OR REPLACE INTO lista (${COLUNAS.join(",")}) VALUES (${COLUNAS.map(() => "?").join(",")})`, [
-        i.chave, i.id, i.tipo, i.titulo, i.tituloOriginal, i.poster, i.idioma, i.nivel, i.status, i.notas, i.atualizado,
-        JSON.stringify(i.generos), JSON.stringify(i.plataformas), i.nota, i.ano, i.sinopse,
+        i.chave, i.id, i.tipo, i.titulo, i.tituloOriginal, i.poster, i.idioma, i.nivel, i.status, "", i.atualizado,
+        JSON.stringify(i.generos), JSON.stringify(i.plataformas), i.nota, i.ano, i.sinopse, JSON.stringify(i.vocabulario),
       ]);
     },
     async remover(chave) {

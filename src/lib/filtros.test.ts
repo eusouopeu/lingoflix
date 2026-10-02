@@ -11,7 +11,7 @@ const item = (p: Partial<ItemLista>): ItemLista => ({
   idioma: "fr",
   nivel: 1,
   status: "quero",
-  notas: "",
+  vocabulario: [],
   atualizado: 0,
   generos: [],
   plataformas: [],

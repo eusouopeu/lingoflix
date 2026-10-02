@@ -132,7 +132,14 @@ export function buscarDetalhes(t: Pick<Titulo, "tipo" | "id" | "idioma">): Promi
       append_to_response: "videos,watch/providers",
       include_video_language: `${t.idioma},en,null`,
     });
-    p = obter<DetalhesBrutos>(`${BASE}/${CAMINHO[t.tipo]}/${t.id}?${q}`).then((d) => {
+    p = obter<DetalhesBrutos>(`${BASE}/${CAMINHO[t.tipo]}/${t.id}?${q}`).then(async (d) => {
+      // muitos títulos estrangeiros não têm sinopse em português: cai para o inglês
+      if (!d.overview) {
+        const en = new URLSearchParams({ api_key: CHAVE, language: "en-US" });
+        d.overview = await obter<{ overview?: string }>(`${BASE}/${CAMINHO[t.tipo]}/${t.id}?${en}`)
+          .then((x) => x.overview ?? "")
+          .catch(() => "");
+      }
       const videos = (d.videos?.results ?? []).filter((v) => v.site === "YouTube");
       // trailer falado no idioma original primeiro; depois qualquer trailer
       const trailer =

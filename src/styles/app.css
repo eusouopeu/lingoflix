@@ -63,6 +63,7 @@
     outline: 2px solid var(--caneta);
     outline-offset: 2px;
   }
+  input:focus-visible,
   select:focus-visible,
   textarea:focus-visible {
     outline-color: var(--foco);

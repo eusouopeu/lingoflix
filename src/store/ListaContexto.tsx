@@ -46,7 +46,7 @@ export function ListaProvider({ children }: { children: ReactNode }) {
         idioma: t.idioma,
         nivel: t.nivel,
         status,
-        notas: atual?.notas ?? "",
+        vocabulario: atual?.vocabulario ?? [],
         atualizado: Date.now(),
         generos: t.generos.length ? t.generos : (det?.generos ?? []),
         plataformas: det ? det.plataformas.map((p) => String(p.id)) : (atual?.plataformas ?? []),

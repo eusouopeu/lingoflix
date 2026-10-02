@@ -10,7 +10,7 @@ const item = (id: number, status: ItemLista["status"]): ItemLista => ({
   idioma: "fr",
   nivel: 1,
   status,
-  notas: "",
+  vocabulario: [],
   atualizado: id,
   generos: [35],
   plataformas: ["8"],
@@ -26,11 +26,11 @@ describe("lista pessoal (web)", () => {
     const a = criarListaWeb();
     await a.salvar(item(1, "quero"));
     await a.salvar(item(2, "quero"));
-    await a.salvar({ ...item(1, "visto"), notas: "bonjour" });
+    await a.salvar({ ...item(1, "visto"), vocabulario: [{ termo: "bonjour", traducao: "bom dia" }] });
     const b = criarListaWeb();
     const todos = await b.todos();
     expect(todos).toHaveLength(2);
-    expect(todos.find((i) => i.id === 1)).toMatchObject({ status: "visto", notas: "bonjour", generos: [35], plataformas: ["8"] });
+    expect(todos.find((i) => i.id === 1)).toMatchObject({ status: "visto", vocabulario: [{ termo: "bonjour", traducao: "bom dia" }], generos: [35], plataformas: ["8"] });
     await b.remover("filme-2");
     expect((await criarListaWeb().todos()).map((i) => i.id)).toEqual([1]);
   });

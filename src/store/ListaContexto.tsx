@@ -48,10 +48,11 @@ export function ListaProvider({ children }: { children: ReactNode }) {
         status,
         notas: atual?.notas ?? "",
         atualizado: Date.now(),
-        generos: t.generos,
+        generos: t.generos.length ? t.generos : (det?.generos ?? []),
         plataformas: det ? det.plataformas.map((p) => String(p.id)) : (atual?.plataformas ?? []),
-        nota: t.nota,
+        nota: t.nota || det?.nota || 0,
         ano: t.ano,
+        sinopse: t.sinopse || det?.sinopse || "",
       });
     },
     atualizar: (item, mudanca) => gravar({ ...item, ...mudanca, atualizado: Date.now() }),

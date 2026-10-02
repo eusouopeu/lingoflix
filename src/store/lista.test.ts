@@ -16,6 +16,7 @@ const item = (id: number, status: ItemLista["status"]): ItemLista => ({
   plataformas: ["8"],
   nota: 7,
   ano: 2001,
+  sinopse: "",
 });
 
 describe("lista pessoal (web)", () => {

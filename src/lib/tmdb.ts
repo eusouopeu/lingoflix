@@ -99,6 +99,9 @@ export async function buscarPagina(f: Filtro, signal?: AbortSignal) {
 }
 
 export interface Detalhes {
+  sinopse: string;
+  generos: number[];
+  nota: number;
   duracao: string | null;
   trailer: string | null;
   link: string | null;
@@ -106,6 +109,9 @@ export interface Detalhes {
 }
 
 interface DetalhesBrutos {
+  overview?: string;
+  genres?: { id: number }[];
+  vote_average?: number;
   runtime?: number;
   number_of_seasons?: number;
   videos?: { results: { key: string; site: string; type: string; iso_639_1: string }[] };
@@ -140,6 +146,9 @@ export function buscarDetalhes(t: Pick<Titulo, "tipo" | "id" | "idioma">): Promi
           ? `${d.number_of_seasons} temp.`
           : null;
       return {
+        sinopse: d.overview ?? "",
+        generos: (d.genres ?? []).map((g) => g.id),
+        nota: d.vote_average ?? 0,
         duracao,
         trailer: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null,
         link: br?.link ?? null,

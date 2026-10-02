@@ -17,6 +17,7 @@ const item = (p: Partial<ItemLista>): ItemLista => ({
   plataformas: [],
   nota: 7,
   ano: 2000,
+  sinopse: "",
   ...p,
 });
 

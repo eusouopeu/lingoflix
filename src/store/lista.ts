@@ -4,6 +4,7 @@
 import { Capacitor } from "@capacitor/core";
 import type { Tipo } from "../lib/catalogo";
 import type { Nivel } from "../lib/nivel";
+import type { Titulo } from "../lib/tmdb";
 
 export type Status = "quero" | "visto";
 
@@ -23,6 +24,7 @@ export interface ItemLista {
   plataformas: string[];
   nota: number;
   ano: number | null;
+  sinopse: string;
 }
 
 export interface RepoLista {
@@ -33,8 +35,8 @@ export interface RepoLista {
 
 const recentes = (a: ItemLista, b: ItemLista) => b.atualizado - a.atualizado;
 
-// Itens gravados pela versão 1 não tinham gêneros/plataformas/nota/ano.
-const completar = (i: ItemLista): ItemLista => ({ ...i, generos: i.generos ?? [], plataformas: i.plataformas ?? [], nota: i.nota ?? 0, ano: i.ano ?? null });
+// Itens de versões anteriores não tinham gêneros/plataformas/nota/ano/sinopse.
+const completar = (i: ItemLista): ItemLista => ({ ...i, generos: i.generos ?? [], plataformas: i.plataformas ?? [], nota: i.nota ?? 0, ano: i.ano ?? null, sinopse: i.sinopse ?? "" });
 
 const CHAVE_WEB = "lingoflix.lista";
 
@@ -62,7 +64,7 @@ export function criarListaWeb(): RepoLista {
   };
 }
 
-const COLUNAS = ["chave", "id", "tipo", "titulo", "titulo_original", "poster", "idioma", "nivel", "status", "notas", "atualizado", "generos", "plataformas", "nota", "ano"];
+const COLUNAS = ["chave", "id", "tipo", "titulo", "titulo_original", "poster", "idioma", "nivel", "status", "notas", "atualizado", "generos", "plataformas", "nota", "ano", "sinopse"];
 
 async function criarListaSQLite(): Promise<RepoLista> {
   const { CapacitorSQLite, SQLiteConnection } = await import("@capacitor-community/sqlite");
@@ -89,6 +91,7 @@ async function criarListaSQLite(): Promise<RepoLista> {
     ["plataformas", "TEXT NOT NULL DEFAULT '[]'"],
     ["nota", "REAL NOT NULL DEFAULT 0"],
     ["ano", "INTEGER"],
+    ["sinopse", "TEXT NOT NULL DEFAULT ''"],
   ];
   for (const [nome, def] of novas) {
     if (!existentes.has(nome)) await db.execute(`ALTER TABLE lista ADD COLUMN ${nome} ${def};`);
@@ -112,12 +115,13 @@ async function criarListaSQLite(): Promise<RepoLista> {
         plataformas: JSON.parse(v.plataformas || "[]"),
         nota: v.nota ?? 0,
         ano: v.ano ?? null,
+        sinopse: v.sinopse ?? "",
       }));
     },
     async salvar(i) {
       await db.run(`INSERT OR REPLACE INTO lista (${COLUNAS.join(",")}) VALUES (${COLUNAS.map(() => "?").join(",")})`, [
         i.chave, i.id, i.tipo, i.titulo, i.tituloOriginal, i.poster, i.idioma, i.nivel, i.status, i.notas, i.atualizado,
-        JSON.stringify(i.generos), JSON.stringify(i.plataformas), i.nota, i.ano,
+        JSON.stringify(i.generos), JSON.stringify(i.plataformas), i.nota, i.ano, i.sinopse,
       ]);
     },
     async remover(chave) {
@@ -128,4 +132,21 @@ async function criarListaSQLite(): Promise<RepoLista> {
 
 export function abrirLista(): Promise<RepoLista> {
   return Capacitor.isNativePlatform() ? criarListaSQLite() : Promise.resolve(criarListaWeb());
+}
+
+// Item da lista no formato do cartão de título (mesmo cartão do Explorar).
+export function paraTitulo(i: ItemLista): Titulo {
+  return {
+    id: i.id,
+    tipo: i.tipo,
+    titulo: i.titulo,
+    tituloOriginal: i.tituloOriginal,
+    idioma: i.idioma,
+    poster: i.poster,
+    sinopse: i.sinopse,
+    ano: i.ano,
+    nota: i.nota,
+    nivel: i.nivel,
+    generos: i.generos,
+  };
 }

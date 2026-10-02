@@ -28,8 +28,10 @@
   --ok: #157a45;
   --erro: #b23a2f;
   --foco: #2f6be0;
-  /* pílula da nota e ícone do trailer no cartão (pedido do Pedro, mock 02/10) */
-  --nota: #15803d;
+  /* pílula da nota (cor pela faixa, src/lib/nota.ts) e ícone do trailer */
+  --nota-alta: #15803d;
+  --nota-media: #64748b;
+  --nota-baixa: #b91c1c;
   --trailer: #d97706;
   /* etiquetas de gênero: texto branco sobre tons 600–700 (contraste AA) */
   --tag-azul: #2563eb;

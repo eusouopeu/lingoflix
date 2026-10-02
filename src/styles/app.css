@@ -24,7 +24,9 @@
   --color-foco: var(--foco);
   --color-cartao: var(--cartao);
   --color-cartao-verso: var(--cartao-verso);
-  --color-nota: var(--nota);
+  --color-nota-alta: var(--nota-alta);
+  --color-nota-media: var(--nota-media);
+  --color-nota-baixa: var(--nota-baixa);
   --color-trailer: var(--trailer);
   --color-tag-azul: var(--tag-azul);
   --color-tag-ambar: var(--tag-ambar);

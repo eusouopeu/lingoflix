@@ -3,7 +3,9 @@ import { urlDescobrir } from "./tmdb";
 
 describe("urlDescobrir", () => {
   it("monta busca de séries com idioma, página, ordem e todas as plataformas", () => {
-    const u = new URL(urlDescobrir({ tipo: "serie", idioma: "es", ordem: "lancamento", pagina: 3, generos: [], plataformas: [] }, "k"));
+    const u = new URL(
+      urlDescobrir({ tipo: "serie", idioma: "es", ordem: "lancamento", pagina: 3, generos: [], plataformas: [] }, "k"),
+    );
     expect(u.pathname).toBe("/3/discover/tv");
     expect(u.searchParams.get("with_original_language")).toBe("es");
     expect(u.searchParams.get("page")).toBe("3");
@@ -15,7 +17,10 @@ describe("urlDescobrir", () => {
 
   it("vários gêneros e plataformas viram OU (|) em filmes", () => {
     const u = new URL(
-      urlDescobrir({ tipo: "filme", idioma: "zh", ordem: "nota", pagina: 1, generos: [35, 18], plataformas: ["119", "8"] }, "k")
+      urlDescobrir(
+        { tipo: "filme", idioma: "zh", ordem: "nota", pagina: 1, generos: [35, 18], plataformas: ["119", "8"] },
+        "k",
+      ),
     );
     expect(u.pathname).toBe("/3/discover/movie");
     expect(u.searchParams.get("with_watch_providers")).toBe("119|8");

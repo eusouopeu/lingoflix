@@ -12,7 +12,8 @@ export interface FiltrosLista {
   ordem: OrdemLista;
 }
 
-const algum = <T,>(escolhidos: T[], valores: T[]) => escolhidos.length === 0 || escolhidos.some((v) => valores.includes(v));
+const algum = <T>(escolhidos: T[], valores: T[]) =>
+  escolhidos.length === 0 || escolhidos.some((v) => valores.includes(v));
 
 const ORDENAR: Record<OrdemLista, (a: ItemLista, b: ItemLista) => number> = {
   adicionado: (a, b) => b.atualizado - a.atualizado,
@@ -28,7 +29,7 @@ export function filtrarLista(itens: ItemLista[], f: FiltrosLista): ItemLista[] {
         (f.idioma === null || i.idioma === f.idioma) &&
         (f.nivel === null || i.nivel === f.nivel) &&
         algum(f.generos, i.generos) &&
-        algum(f.plataformas, i.plataformas)
+        algum(f.plataformas, i.plataformas),
     )
     .sort(ORDENAR[f.ordem]);
 }

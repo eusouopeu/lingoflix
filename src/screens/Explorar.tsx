@@ -39,7 +39,7 @@ export function Explorar() {
     setErro(null);
     buscarPagina(
       { tipo: f.tipo!, idioma: f.idioma!, ordem: f.ordem, pagina, generos: f.generos, plataformas: f.plataformas },
-      ctl.signal
+      ctl.signal,
     )
       .then((r) => {
         setTotalPaginas(r.totalPaginas);
@@ -70,7 +70,14 @@ export function Explorar() {
         onAjustes={() => setAjustes(!ajustes)}
         ajustesAtivos={contarAjustes(f, "popularidade")}
       >
-        <PainelFiltros id="explorar" valores={f} onChange={setF} ajustes={ajustes} ordens={ORDENS} permiteTodos={false} />
+        <PainelFiltros
+          id="explorar"
+          valores={f}
+          onChange={setF}
+          ajustes={ajustes}
+          ordens={ORDENS}
+          permiteTodos={false}
+        />
       </Cabecalho>
 
       <main className="mx-auto max-w-5xl px-4 pt-2 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+24px)]">
@@ -89,7 +96,9 @@ export function Explorar() {
 
         {!carregando && !erro && visiveis.length === 0 && (
           <p className="py-16 text-center text-sub">
-            {itens.length > 0 ? "Nenhum título deste nível nas páginas carregadas." : "Nada encontrado com esses filtros."}
+            {itens.length > 0
+              ? "Nenhum título deste nível nas páginas carregadas."
+              : "Nada encontrado com esses filtros."}
           </p>
         )}
 

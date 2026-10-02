@@ -1,4 +1,4 @@
-// Barra superior das duas abas: título, tema claro/escuro e o botão que
+// Barra superior das abas: título, tema claro/escuro e o botão que
 // recolhe os ajustes (gênero, streaming, ordem), com contador do que está ativo.
 import { AdjustmentsHorizontalIcon, MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { AdjustmentsHorizontalIcon as AjustesSolido } from "@heroicons/react/24/solid";
@@ -14,10 +14,10 @@ export function Cabecalho({
   children,
 }: {
   titulo: string;
-  ajustes: boolean;
-  onAjustes: () => void;
-  ajustesAtivos: number;
-  children: ReactNode;
+  ajustes?: boolean;
+  onAjustes?: () => void;
+  ajustesAtivos?: number;
+  children?: ReactNode;
 }) {
   const tema = useSyncExternalStore(assinarTema, temaAtual);
   const escuro = tema === "escuro";
@@ -33,20 +33,22 @@ export function Cabecalho({
               aplicarTema(escuro ? "claro" : "escuro");
             }}
           />
-          <span className="relative">
-            <BotaoIcone
-              icone={AdjustmentsHorizontalIcon}
-              iconeAtivo={AjustesSolido}
-              ativo={ajustes}
-              rotulo="Gênero, streaming e ordem"
-              onClick={onAjustes}
-            />
-            {ajustesAtivos > 0 && (
-              <span className="pointer-events-none absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-caneta text-[10px] font-bold text-on-caneta">
-                {ajustesAtivos}
-              </span>
-            )}
-          </span>
+          {onAjustes && (
+            <span className="relative">
+              <BotaoIcone
+                icone={AdjustmentsHorizontalIcon}
+                iconeAtivo={AjustesSolido}
+                ativo={!!ajustes}
+                rotulo="Gênero, streaming e ordem"
+                onClick={onAjustes}
+              />
+              {!!ajustesAtivos && (
+                <span className="pointer-events-none absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-caneta text-[10px] font-bold text-on-caneta">
+                  {ajustesAtivos}
+                </span>
+              )}
+            </span>
+          )}
         </div>
         {children}
       </div>

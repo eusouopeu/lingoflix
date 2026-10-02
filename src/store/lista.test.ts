@@ -30,7 +30,12 @@ describe("lista pessoal (web)", () => {
     const b = criarListaWeb();
     const todos = await b.todos();
     expect(todos).toHaveLength(2);
-    expect(todos.find((i) => i.id === 1)).toMatchObject({ status: "visto", vocabulario: [{ termo: "bonjour", traducao: "bom dia" }], generos: [35], plataformas: ["8"] });
+    expect(todos.find((i) => i.id === 1)).toMatchObject({
+      status: "visto",
+      vocabulario: [{ termo: "bonjour", traducao: "bom dia" }],
+      generos: [35],
+      plataformas: ["8"],
+    });
     await b.remover("filme-2");
     expect((await criarListaWeb().todos()).map((i) => i.id)).toEqual([1]);
   });

@@ -31,7 +31,7 @@ export function BotaoIcone({
       className={cn(
         "inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-[color,transform] duration-150 active:scale-90",
         ativo ? "text-caneta" : "text-sub",
-        className
+        className,
       )}
     >
       <Atual className="size-6" aria-hidden />

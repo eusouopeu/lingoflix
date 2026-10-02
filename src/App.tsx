@@ -1,24 +1,33 @@
-import { BookmarkIcon, FilmIcon } from "@heroicons/react/24/outline";
-import { BookmarkIcon as BookmarkSolido, FilmIcon as FilmSolido } from "@heroicons/react/24/solid";
+import { BookmarkIcon, Cog6ToothIcon, FilmIcon } from "@heroicons/react/24/outline";
+import {
+  BookmarkIcon as BookmarkSolido,
+  Cog6ToothIcon as AjustesSolido,
+  FilmIcon as FilmSolido,
+} from "@heroicons/react/24/solid";
 import { useState } from "react";
+import { Ajustes } from "./screens/Ajustes";
 import { Explorar } from "./screens/Explorar";
+import { AjustesProvider } from "./store/ajustes";
 import { MinhaLista } from "./screens/MinhaLista";
 import { ListaProvider, useLista } from "./store/ListaContexto";
 import { cn } from "./ui/cn";
 
-type Aba = "explorar" | "lista";
+type Aba = "explorar" | "lista" | "ajustes";
 
 export function App() {
   const [aba, setAba] = useState<Aba>("explorar");
   return (
-    <ListaProvider>
-      {/* Explorar fica montado (escondido) para não perder filtros e páginas carregadas. */}
-      <div hidden={aba !== "explorar"}>
-        <Explorar />
-      </div>
-      {aba === "lista" && <MinhaLista />}
-      <BarraAbas aba={aba} onChange={setAba} />
-    </ListaProvider>
+    <AjustesProvider>
+      <ListaProvider>
+        {/* Explorar fica montado (escondido) para não perder filtros e páginas carregadas. */}
+        <div hidden={aba !== "explorar"}>
+          <Explorar />
+        </div>
+        {aba === "lista" && <MinhaLista />}
+        {aba === "ajustes" && <Ajustes />}
+        <BarraAbas aba={aba} onChange={setAba} />
+      </ListaProvider>
+    </AjustesProvider>
   );
 }
 
@@ -28,6 +37,7 @@ function BarraAbas({ aba, onChange }: { aba: Aba; onChange: (a: Aba) => void }) 
   const abas = [
     { id: "explorar" as const, nome: "Explorar", I: FilmIcon, IA: FilmSolido },
     { id: "lista" as const, nome: "Minha lista", I: BookmarkIcon, IA: BookmarkSolido },
+    { id: "ajustes" as const, nome: "Ajustes", I: Cog6ToothIcon, IA: AjustesSolido },
   ];
   return (
     <nav
@@ -45,7 +55,7 @@ function BarraAbas({ aba, onChange }: { aba: Aba; onChange: (a: Aba) => void }) 
             onClick={() => onChange(id)}
             className={cn(
               "relative flex h-[var(--tabbar-h)] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 text-xs font-semibold transition-colors duration-150",
-              ativa ? "text-caneta" : "text-sub"
+              ativa ? "text-caneta" : "text-sub",
             )}
           >
             <span className="relative">

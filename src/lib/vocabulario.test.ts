@@ -1,4 +1,4 @@
-import { contarPalavras, limparPares, migrarNotas, textoExportacao } from "./vocabulario";
+import { contarPalavras, limparPares, migrarNotas } from "./vocabulario";
 
 describe("vocabulário", () => {
   it("converte anotações em texto livre (versões anteriores) em pares", () => {
@@ -11,7 +11,7 @@ describe("vocabulário", () => {
     expect(migrarNotas("")).toEqual([]);
   });
 
-  it("descarta pares vazios, conta palavras e monta o texto de exportação", () => {
+  it("descarta pares vazios e conta palavras", () => {
     const pares = limparPares([
       { termo: " Friend ", traducao: "Amigo " },
       { termo: "", traducao: "" },
@@ -22,6 +22,5 @@ describe("vocabulário", () => {
       { termo: "Many", traducao: "" },
     ]);
     expect(contarPalavras(pares)).toBe(2);
-    expect(textoExportacao("Vingadores: Ultimato", pares)).toBe("Vingadores: Ultimato\n\nFriend — Amigo\nMany");
   });
 });

@@ -60,7 +60,7 @@ export function Ajuda({ children, rotulo = "Como funciona" }: { children: ReactN
         }}
         className={cn(
           "inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-[color,transform] duration-150 active:scale-90",
-          aberta ? "text-caneta" : "text-sub"
+          aberta ? "text-caneta" : "text-sub",
         )}
       >
         <InformationCircleIcon className="size-5" aria-hidden />
@@ -72,13 +72,17 @@ export function Ajuda({ children, rotulo = "Como funciona" }: { children: ReactN
             role="tooltip"
             className={cn(
               "fixed z-50 rounded-app-sm bg-ink px-3 py-2.5 text-sm leading-[1.45] text-card",
-              pos ? "animate-surge" : "invisible"
+              pos ? "animate-surge" : "invisible",
             )}
-            style={{ left: pos?.left ?? 0, top: pos?.top ?? 0, width: Math.min(LARGURA, window.innerWidth - MARGEM * 2) }}
+            style={{
+              left: pos?.left ?? 0,
+              top: pos?.top ?? 0,
+              width: Math.min(LARGURA, window.innerWidth - MARGEM * 2),
+            }}
           >
             {children}
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );

@@ -1,9 +1,11 @@
 // Peças comuns aos dois cartões de título (grade do Explorar e linha da Minha
 // lista): detalhes sob demanda, metadados, logos de streaming e etiquetas.
+import { Capacitor } from "@capacitor/core";
 import { FilmIcon, StarIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
 import { corGenero, NOME_GENERO, PLATAFORMAS } from "../lib/catalogo";
 import { faixaNota } from "../lib/nota";
+import { destinoApp, unificarPlataformas, type Plataforma } from "../lib/streaming";
 import { buscarDetalhes, IMG, type Detalhes, type Titulo } from "../lib/tmdb";
 import { cn } from "../ui/cn";
 
@@ -19,9 +21,11 @@ export function useDetalhes<E extends HTMLElement>(t: Titulo) {
       ([e]) => {
         if (!e.isIntersecting) return;
         obs.disconnect();
-        buscarDetalhes(t).then(setDet).catch(() => undefined);
+        buscarDetalhes(t)
+          .then(setDet)
+          .catch(() => undefined);
       },
-      { rootMargin: "300px" }
+      { rootMargin: "300px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -38,13 +42,23 @@ export function useDetalhes<E extends HTMLElement>(t: Titulo) {
 const COR_NOTA = { baixa: "bg-nota-baixa", media: "bg-nota-media", alta: "bg-nota-alta" };
 
 // Nota (cor pela faixa), ano, duração e, à direita, o trailer.
-export function Metadados({ nota, ano, det, className }: { nota: number; ano: number | null; det: Detalhes | null; className?: string }) {
+export function Metadados({
+  nota,
+  ano,
+  det,
+  className,
+}: {
+  nota: number;
+  ano: number | null;
+  det: Detalhes | null;
+  className?: string;
+}) {
   return (
     <div className={cn("flex h-7 items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-sub", className)}>
       <span
         className={cn(
           "inline-flex shrink-0 items-center gap-0.5 rounded-app-sm px-1.5 py-1 text-on-caneta transition-colors duration-150",
-          COR_NOTA[faixaNota(nota)]
+          COR_NOTA[faixaNota(nota)],
         )}
       >
         <StarIcon className="size-3.5" aria-hidden />
@@ -68,32 +82,50 @@ export function Metadados({ nota, ano, det, className }: { nota: number; ano: nu
   );
 }
 
-const NOSSAS = new Set(PLATAFORMAS.map((p) => Number(p.id)));
+// Abre o app do streaming (pelo nome do pacote Android); sem o app, ou no
+// navegador, abre o site do serviço (ou a página do TMDB, para os demais).
+async function abrirStreaming(p: Plataforma, linkTmdb: string | null) {
+  const destino = destinoApp(p);
+  if (destino && Capacitor.isNativePlatform()) {
+    try {
+      const { AppLauncher } = await import("@capacitor/app-launcher");
+      if ((await AppLauncher.openUrl({ url: destino.pacote })).completed) return;
+    } catch {
+      /* app não instalado: segue para o site */
+    }
+  }
+  const url = destino?.web ?? linkTmdb;
+  if (url) window.open(url, "_blank", "noopener");
+}
 
-// Logos dos streamings (os do filtro primeiro): 3 no celular, 4 em tela maior.
+// Um ícone por serviço (os do filtro primeiro): 3 no celular, 4 em tela maior.
 export function Logos({ det, className }: { det: Detalhes | null; className?: string }) {
   if (!det?.plataformas.length) return null;
-  const logos = [...det.plataformas].sort((a, b) => Number(NOSSAS.has(b.id)) - Number(NOSSAS.has(a.id))).slice(0, 4);
+  const logos = unificarPlataformas(det.plataformas)
+    .sort((a, b) => Number(NOSSAS.has(b.id)) - Number(NOSSAS.has(a.id)))
+    .slice(0, 4);
   return (
-    <a
-      href={det.link ?? undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Onde assistir: ${det.plataformas.map((p) => p.nome).join(", ")}`}
-      className={cn("flex shrink-0 animate-surge gap-1", !det.link && "pointer-events-none", className)}
-    >
+    <div className={cn("flex shrink-0 animate-surge gap-1", className)}>
       {logos.map((p, i) => (
-        <img
+        <button
           key={p.id}
-          src={`${IMG}/w92${p.logo}`}
-          alt={p.nome}
+          type="button"
+          aria-label={`Abrir ${p.nome}`}
           title={p.nome}
-          className={cn("size-[22px] rounded-[6px] sm:size-7", i === 3 && "hidden sm:block")}
-        />
+          onClick={() => abrirStreaming(p, det.link)}
+          className={cn(
+            "shrink-0 cursor-pointer transition-transform duration-150 active:scale-90",
+            i === 3 && "hidden sm:block",
+          )}
+        >
+          <img src={`${IMG}/w92${p.logo}`} alt="" className="size-[26px] rounded-[7px] sm:size-[30px]" />
+        </button>
       ))}
-    </a>
+    </div>
   );
 }
+
+const NOSSAS = new Set(PLATAFORMAS.map((p) => Number(p.id)));
 
 // classes completas (o Tailwind não enxerga nome montado em tempo de execução)
 const TAG: Record<string, string> = {
@@ -111,7 +143,10 @@ export function Etiquetas({ generos, max }: { generos: number[]; max: number }) 
   return (
     <>
       {generos.slice(0, max).map((g) => (
-        <span key={g} className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold text-on-caneta", TAG[corGenero(g)])}>
+        <span
+          key={g}
+          className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold text-on-caneta", TAG[corGenero(g)])}
+        >
           {NOME_GENERO[g] ?? "Outro"}
         </span>
       ))}
@@ -135,7 +170,15 @@ export function TituloEOriginal({ t, className }: { t: Titulo; className?: strin
 }
 
 // Pôster com uma nova tentativa se a rede falhar no primeiro carregamento.
-export function Poster({ caminho, largura, className }: { caminho: string; largura: "w154" | "w342"; className?: string }) {
+export function Poster({
+  caminho,
+  largura,
+  className,
+}: {
+  caminho: string;
+  largura: "w154" | "w342";
+  className?: string;
+}) {
   const [tentativa, setTentativa] = useState(0);
   return (
     <img

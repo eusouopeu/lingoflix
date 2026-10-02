@@ -2,6 +2,7 @@
 // No app (Android) grava em SQLite; no navegador de desenvolvimento cai para
 // localStorage. As duas implementações cumprem a mesma interface.
 import { Capacitor } from "@capacitor/core";
+import { abrirBanco } from "./banco";
 import type { Tipo } from "../lib/catalogo";
 import type { Nivel } from "../lib/nivel";
 import type { Titulo } from "../lib/tmdb";
@@ -41,7 +42,12 @@ type Antigo = ItemLista & { notas?: string };
 const completar = ({ notas, ...i }: Antigo): ItemLista => ({
   ...i,
   vocabulario: i.vocabulario ?? migrarNotas(notas ?? ""),
-  generos: i.generos ?? [], plataformas: i.plataformas ?? [], nota: i.nota ?? 0, ano: i.ano ?? null, sinopse: i.sinopse ?? "" });
+  generos: i.generos ?? [],
+  plataformas: i.plataformas ?? [],
+  nota: i.nota ?? 0,
+  ano: i.ano ?? null,
+  sinopse: i.sinopse ?? "",
+});
 
 const CHAVE_WEB = "lingoflix.lista";
 
@@ -56,7 +62,9 @@ export function criarListaWeb(): RepoLista {
   const gravar = (d: Record<string, ItemLista>) => localStorage.setItem(CHAVE_WEB, JSON.stringify(d));
   return {
     async todos() {
-      return Object.values(ler() as Record<string, Antigo>).map(completar).sort(recentes);
+      return Object.values(ler() as Record<string, Antigo>)
+        .map(completar)
+        .sort(recentes);
     },
     async salvar(item) {
       gravar({ ...ler(), [item.chave]: item });
@@ -69,13 +77,28 @@ export function criarListaWeb(): RepoLista {
   };
 }
 
-const COLUNAS = ["chave", "id", "tipo", "titulo", "titulo_original", "poster", "idioma", "nivel", "status", "notas", "atualizado", "generos", "plataformas", "nota", "ano", "sinopse", "vocabulario"];
+const COLUNAS = [
+  "chave",
+  "id",
+  "tipo",
+  "titulo",
+  "titulo_original",
+  "poster",
+  "idioma",
+  "nivel",
+  "status",
+  "notas",
+  "atualizado",
+  "generos",
+  "plataformas",
+  "nota",
+  "ano",
+  "sinopse",
+  "vocabulario",
+];
 
 async function criarListaSQLite(): Promise<RepoLista> {
-  const { CapacitorSQLite, SQLiteConnection } = await import("@capacitor-community/sqlite");
-  const sqlite = new SQLiteConnection(CapacitorSQLite);
-  const db = await sqlite.createConnection("lingoflix", false, "no-encryption", 1, false);
-  await db.open();
+  const db = await abrirBanco();
   await db.execute(`CREATE TABLE IF NOT EXISTS lista (
     chave TEXT PRIMARY KEY NOT NULL,
     id INTEGER NOT NULL,
@@ -127,8 +150,23 @@ async function criarListaSQLite(): Promise<RepoLista> {
     },
     async salvar(i) {
       await db.run(`INSERT OR REPLACE INTO lista (${COLUNAS.join(",")}) VALUES (${COLUNAS.map(() => "?").join(",")})`, [
-        i.chave, i.id, i.tipo, i.titulo, i.tituloOriginal, i.poster, i.idioma, i.nivel, i.status, "", i.atualizado,
-        JSON.stringify(i.generos), JSON.stringify(i.plataformas), i.nota, i.ano, i.sinopse, JSON.stringify(i.vocabulario),
+        i.chave,
+        i.id,
+        i.tipo,
+        i.titulo,
+        i.tituloOriginal,
+        i.poster,
+        i.idioma,
+        i.nivel,
+        i.status,
+        "",
+        i.atualizado,
+        JSON.stringify(i.generos),
+        JSON.stringify(i.plataformas),
+        i.nota,
+        i.ano,
+        i.sinopse,
+        JSON.stringify(i.vocabulario),
       ]);
     },
     async remover(chave) {

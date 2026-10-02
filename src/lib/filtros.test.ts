@@ -23,8 +23,27 @@ const item = (p: Partial<ItemLista>): ItemLista => ({
 
 const itens = [
   item({ id: 1, idioma: "fr", generos: [35], plataformas: ["8"], nota: 6, ano: 2020, atualizado: 3 }),
-  item({ id: 2, idioma: "fr", tipo: "serie", chave: "serie-2", generos: [18], plataformas: ["119"], nota: 9, ano: 2010, atualizado: 2 }),
-  item({ id: 3, idioma: "zh", nivel: 2, generos: [18, 35], plataformas: ["8", "350"], nota: 8, ano: 2024, atualizado: 1 }),
+  item({
+    id: 2,
+    idioma: "fr",
+    tipo: "serie",
+    chave: "serie-2",
+    generos: [18],
+    plataformas: ["119"],
+    nota: 9,
+    ano: 2010,
+    atualizado: 2,
+  }),
+  item({
+    id: 3,
+    idioma: "zh",
+    nivel: 2,
+    generos: [18, 35],
+    plataformas: ["8", "350"],
+    nota: 8,
+    ano: 2024,
+    atualizado: 1,
+  }),
 ];
 const vazio = { tipo: null, idioma: null, nivel: null, generos: [], plataformas: [], ordem: "adicionado" as const };
 const ids = (xs: ItemLista[]) => xs.map((x) => x.id);

@@ -51,7 +51,10 @@ export function MultiSelecao<T extends string | number>({
           <span className="truncate">{resumo}</span>
         </button>
         <ChevronDownIcon
-          className={cn("pointer-events-none absolute top-2.5 right-3 size-5 text-sub transition-transform duration-150", aberto && "rotate-180")}
+          className={cn(
+            "pointer-events-none absolute top-2.5 right-3 size-5 text-sub transition-transform duration-150",
+            aberto && "rotate-180",
+          )}
           aria-hidden
         />
         {aberto && (
@@ -78,7 +81,7 @@ export function MultiSelecao<T extends string | number>({
                   }}
                   className={cn(
                     "flex h-11 cursor-pointer items-center gap-2 px-3 text-sm",
-                    marcado ? "font-semibold text-caneta" : "text-ink"
+                    marcado ? "font-semibold text-caneta" : "text-ink",
                   )}
                 >
                   <CheckIcon className={cn("size-5 shrink-0", !marcado && "invisible")} aria-hidden />

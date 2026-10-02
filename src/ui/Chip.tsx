@@ -22,7 +22,7 @@ export function Chip({
       onClick={onClick}
       className={cn(
         "h-9 min-w-10 shrink-0 cursor-pointer rounded-full px-3 text-xs font-semibold transition-[background-color,color,transform] duration-150 active:scale-95",
-        ativo ? "bg-caneta-500 text-on-caneta" : "bg-card-2 text-ink"
+        ativo ? "bg-caneta-500 text-on-caneta" : "bg-card-2 text-ink",
       )}
     >
       {children}

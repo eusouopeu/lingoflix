@@ -62,7 +62,13 @@ export function PainelFiltros<O extends string>({
             onChange={(plataformas) => muda({ plataformas })}
             opcoes={PLATAFORMAS.map((p) => ({ valor: p.id, nome: p.nome }))}
           />
-          <Selecao id={`${id}-ordem`} rotulo="Ordem" valor={f.ordem} onChange={(v) => muda({ ordem: v as O })} opcoes={ordens} />
+          <Selecao
+            id={`${id}-ordem`}
+            rotulo="Ordem"
+            valor={f.ordem}
+            onChange={(v) => muda({ ordem: v as O })}
+            opcoes={ordens}
+          />
         </div>
       )}
 
@@ -108,8 +114,8 @@ export function PainelFiltros<O extends string>({
           ))}
         </div>
         <Ajuda rotulo="Sobre o nível">
-          Nível estimado pelo gênero e pela época do título: animação e família tendem a ter fala simples; drama, história
-          e crime concentram vocabulário denso. Mandarim usa a escala HSK; os demais idiomas, o QECR.
+          Nível estimado pelo gênero e pela época do título: animação e família tendem a ter fala simples; drama,
+          história e crime concentram vocabulário denso. Mandarim usa a escala HSK; os demais idiomas, o QECR.
         </Ajuda>
       </div>
     </>

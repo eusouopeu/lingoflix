@@ -34,7 +34,9 @@ const CAMINHO: Record<Tipo, string> = { filme: "movie", serie: "tv" };
 const DATA: Record<Tipo, string> = { filme: "primary_release_date", serie: "first_air_date" };
 
 export function urlDescobrir(f: Filtro, chave = CHAVE): string {
-  const ordem = { popularidade: "popularity.desc", nota: "vote_average.desc", lancamento: `${DATA[f.tipo]}.desc` }[f.ordem];
+  const ordem = { popularidade: "popularity.desc", nota: "vote_average.desc", lancamento: `${DATA[f.tipo]}.desc` }[
+    f.ordem
+  ];
   const p = new URLSearchParams({
     api_key: chave,
     language: "pt-BR",
@@ -116,7 +118,10 @@ interface DetalhesBrutos {
   number_of_seasons?: number;
   videos?: { results: { key: string; site: string; type: string; iso_639_1: string }[] };
   "watch/providers"?: {
-    results: Record<string, { link?: string; flatrate?: { provider_id: number; provider_name: string; logo_path: string }[] }>;
+    results: Record<
+      string,
+      { link?: string; flatrate?: { provider_id: number; provider_name: string; logo_path: string }[] }
+    >;
   };
 }
 

@@ -51,7 +51,7 @@ export function CartaoTitulo({ t }: { t: Titulo }) {
             ativo={status === "quero"}
             rotulo="Quero ver"
             onClick={() => lista.alternar(t, "quero", det)}
-            className="size-9"
+            className="size-[34px]"
           />
           <BotaoIcone
             icone={CheckCircleIcon}
@@ -59,7 +59,7 @@ export function CartaoTitulo({ t }: { t: Titulo }) {
             ativo={status === "visto"}
             rotulo="Já vi"
             onClick={() => lista.alternar(t, "visto", det)}
-            className="size-9"
+            className="size-[34px]"
           />
           <Logos det={det} className="ml-auto" />
         </div>

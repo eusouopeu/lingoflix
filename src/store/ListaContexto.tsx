@@ -21,13 +21,18 @@ export function ListaProvider({ children }: { children: ReactNode }) {
   const obterRepo = () => (repo.current ??= abrirLista());
 
   useEffect(() => {
-    obterRepo().then((r) => r.todos()).then(setItens).catch(console.error);
+    obterRepo()
+      .then((r) => r.todos())
+      .then(setItens)
+      .catch(console.error);
   }, []);
 
   // Estado otimista: a tela muda na hora e a gravação segue em segundo plano.
   const gravar = (item: ItemLista) => {
     setItens((xs) => [item, ...xs.filter((x) => x.chave !== item.chave)]);
-    obterRepo().then((r) => r.salvar(item)).catch(console.error);
+    obterRepo()
+      .then((r) => r.salvar(item))
+      .catch(console.error);
   };
 
   const valor: Contexto = {
@@ -58,7 +63,9 @@ export function ListaProvider({ children }: { children: ReactNode }) {
     atualizar: (item, mudanca) => gravar({ ...item, ...mudanca, atualizado: Date.now() }),
     remover: (chave) => {
       setItens((xs) => xs.filter((x) => x.chave !== chave));
-      obterRepo().then((r) => r.remover(chave)).catch(console.error);
+      obterRepo()
+        .then((r) => r.remover(chave))
+        .catch(console.error);
     },
   };
 

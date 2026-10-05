@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   casarPorTempo,
+  decodificarTexto,
   dividirPalavras,
   estimarDeslocamento,
   falaEm,
@@ -10,7 +11,8 @@ import {
   type Fala,
 } from "./legenda";
 
-const SRT = "﻿2\r\n00:00:05,000 --> 00:00:07,500\r\n<i>Second</i> line\r\n\r\n1\r\n00:00:01,000 --> 00:00:03,000\r\n{\\an8}Hello,\r\nworld!\r\n\r\nlixo sem tempo\r\n\r\n3\r\n00:01:00,000 --> 00:01:02,000\r\n\r\n";
+const SRT =
+  "﻿2\r\n00:00:05,000 --> 00:00:07,500\r\n<i>Second</i> line\r\n\r\n1\r\n00:00:01,000 --> 00:00:03,000\r\n{\\an8}Hello,\r\nworld!\r\n\r\nlixo sem tempo\r\n\r\n3\r\n00:01:00,000 --> 00:01:02,000\r\n\r\n";
 
 describe("lerSrt", () => {
   it("lê blocos, limpa tags, junta linhas e ordena", () => {
@@ -94,5 +96,12 @@ describe("tempo", () => {
     expect(lerTempo("62:15")).toBe(3735000);
     expect(lerTempo("75")).toBe(4500000);
     expect(lerTempo("abc")).toBeNull();
+  });
+});
+
+describe("decodificarTexto", () => {
+  it("UTF-8 e Windows-1252", () => {
+    expect(decodificarTexto(new TextEncoder().encode("ação").buffer)).toBe("ação");
+    expect(decodificarTexto(new Uint8Array([0x61, 0xe7, 0xe3, 0x6f]).buffer)).toBe("ação");
   });
 });

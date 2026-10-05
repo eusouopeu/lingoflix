@@ -52,5 +52,6 @@ export async function gravarLegenda(l: Legenda): Promise<void> {
     localStorage.setItem(PREFIXO_WEB + l.chave, JSON.stringify(l));
     return;
   }
-  await (await banco()).run("INSERT OR REPLACE INTO legendas (chave, dados) VALUES (?, ?)", [l.chave, JSON.stringify(l)]);
+  const db = await banco();
+  await db.run("INSERT OR REPLACE INTO legendas (chave, dados) VALUES (?, ?)", [l.chave, JSON.stringify(l)]);
 }

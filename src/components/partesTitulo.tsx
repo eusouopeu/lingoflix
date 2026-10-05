@@ -110,7 +110,18 @@ async function abrirStreaming(p: Plataforma, t: Titulo, linkTmdb: string | null)
 }
 
 // Um ícone por serviço (os do filtro primeiro): 3 no celular, 4 em tela maior.
-export function Logos({ t, det, className }: { t: Titulo; det: Detalhes | null; className?: string }) {
+// `compacto`: no celular mostra só 2 (cartão da Minha lista, com mais ações na linha).
+export function Logos({
+  t,
+  det,
+  compacto,
+  className,
+}: {
+  t: Titulo;
+  det: Detalhes | null;
+  compacto?: boolean;
+  className?: string;
+}) {
   if (!det?.plataformas.length) return null;
   const logos = unificarPlataformas(det.plataformas)
     .sort((a, b) => Number(NOSSAS.has(b.id)) - Number(NOSSAS.has(a.id)))
@@ -126,7 +137,7 @@ export function Logos({ t, det, className }: { t: Titulo; det: Detalhes | null; 
           onClick={() => abrirStreaming(p, t, det.link)}
           className={cn(
             "shrink-0 cursor-pointer transition-transform duration-150 active:scale-90",
-            i === 3 && "hidden sm:block",
+            (i === 3 || (compacto && i === 2)) && "hidden sm:block",
           )}
         >
           <img src={`${IMG}/w92${p.logo}`} alt="" className="size-[26px] rounded-[7px] sm:size-[30px]" />

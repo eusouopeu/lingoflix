@@ -4,6 +4,7 @@ import { FilmIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { Cabecalho } from "../components/Cabecalho";
 import { CartaoLista } from "../components/CartaoLista";
+import { SeletorEpisodio } from "../components/SeletorEpisodio";
 import { contarAjustes, PainelFiltros } from "../components/PainelFiltros";
 import { ORDENS_LISTA } from "../lib/catalogo";
 import { filtrarLista, type FiltrosLista } from "../lib/filtros";
@@ -11,6 +12,7 @@ import { useLista } from "../store/ListaContexto";
 import { paraTitulo, type Status } from "../store/lista";
 import { useNiveisIA } from "../store/useNiveisIA";
 import { Segmentado } from "../ui/Segmentado";
+import { Legendas } from "./Legendas";
 import { Vocabulario } from "./Vocabulario";
 
 export function MinhaLista() {
@@ -36,6 +38,9 @@ export function MinhaLista() {
   const [ajustes, setAjustes] = useState(false);
   // tela do vocabulário aberta: título atual e a ordem da lista ao abrir
   const [vocab, setVocab] = useState<{ chave: string; ordem: string[] } | null>(null);
+  // legendas: série escolhe o episódio antes (`episodio` vazio = no seletor)
+  const [legendas, setLegendas] = useState<{ chave: string; temporada?: number; episodio?: number } | null>(null);
+  const daSerie = legendas && salvos.find((i) => i.chave === legendas.chave)?.tipo === "serie";
   const filtrados = filtrarLista(itens, f);
   const daAba = filtrados.filter((i) => i.status === aba);
   const filtrando = daAba.length < itens.filter((i) => i.status === aba).length;
@@ -80,11 +85,27 @@ export function MinhaLista() {
                 item={i}
                 nivelIA={ia.has(i.chave)}
                 onVocabulario={() => setVocab({ chave: i.chave, ordem: daAba.map((x) => x.chave) })}
+                onLegendas={() => setLegendas({ chave: i.chave })}
               />
             ))}
           </ul>
         )}
       </main>
+      {legendas && daSerie && legendas.episodio == null && (
+        <SeletorEpisodio
+          item={salvos.find((i) => i.chave === legendas.chave)!}
+          onEscolher={(temporada, episodio) => setLegendas({ ...legendas, temporada, episodio })}
+          onFechar={() => setLegendas(null)}
+        />
+      )}
+      {legendas && (!daSerie || legendas.episodio != null) && (
+        <Legendas
+          chaveTitulo={legendas.chave}
+          temporada={legendas.temporada}
+          episodio={legendas.episodio}
+          onFechar={() => setLegendas(null)}
+        />
+      )}
       {vocab && (
         <Vocabulario
           chave={vocab.chave}

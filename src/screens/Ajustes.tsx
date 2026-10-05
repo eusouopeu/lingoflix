@@ -1,5 +1,6 @@
 // Aba Ajustes: chave da API do Claude (Haiku 4.5), tradução automática do
-// vocabulário, nível pelo Claude, frente dos flashcards e backup da lista.
+// vocabulário, nível pelo Claude, legendas (chave do OpenSubtitles e
+// pré-sincronização), frente dos flashcards e backup da lista.
 import { CheckCircleIcon, ExclamationCircleIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useRef, useState } from "react";
 import { Cabecalho } from "../components/Cabecalho";
@@ -26,7 +27,6 @@ function Secao({ titulo, children }: { titulo: string; children: React.ReactNode
 export function Ajustes() {
   const { ajustes, mudar } = useAjustes();
   const [chave, setChave] = useState<string | null>(null); // rascunho enquanto edita
-  const [visivel, setVisivel] = useState(false);
   const [teste, setTeste] = useState<{ ok: boolean; msg: string } | "testando" | null>(null);
   const valorChave = chave ?? ajustes.chaveClaude;
 
@@ -54,37 +54,15 @@ export function Ajustes() {
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-2 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+24px)]">
         <Secao titulo="Tradução automática">
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center">
-              <label htmlFor="chave-claude" className="text-sm font-semibold">
-                Chave da API do Claude
-              </label>
-              <Ajuda rotulo="Sobre a chave">
-                Usa o modelo Claude Haiku 4.5. Crie a chave em console.anthropic.com; o uso é cobrado na sua conta. A
-                chave fica salva só neste aparelho.
-              </Ajuda>
-            </div>
-            <div className="relative">
-              <input
-                id="chave-claude"
-                type={visivel ? "text" : "password"}
-                value={valorChave}
-                onChange={(e) => setChave(e.target.value)}
-                onBlur={salvarChave}
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="sk-ant-…"
-                className="h-11 w-full rounded-app-sm bg-card pr-11 pl-3 font-mono text-sm text-ink placeholder:text-sub"
-              />
-              <button
-                type="button"
-                aria-label={visivel ? "Esconder chave" : "Mostrar chave"}
-                title={visivel ? "Esconder chave" : "Mostrar chave"}
-                onClick={() => setVisivel(!visivel)}
-                className="absolute top-0 right-0 inline-flex size-11 cursor-pointer items-center justify-center text-sub"
-              >
-                {visivel ? <EyeSlashIcon className="size-5" aria-hidden /> : <EyeIcon className="size-5" aria-hidden />}
-              </button>
-            </div>
+            <CampoChave
+              id="chave-claude"
+              rotulo="Chave da API do Claude"
+              placeholder="sk-ant-…"
+              valor={valorChave}
+              onChange={setChave}
+              onBlur={salvarChave}
+              ajuda="Usa o modelo Claude Haiku 4.5. Crie a chave em console.anthropic.com; o uso é cobrado na sua conta. A chave fica salva só neste aparelho."
+            />
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -149,6 +127,8 @@ export function Ajustes() {
           </div>
         </Secao>
 
+        <SecaoLegendas />
+
         <Secao titulo="Flashcards (Anki)">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center">
@@ -173,6 +153,99 @@ export function Ajustes() {
         <Backup />
       </main>
     </>
+  );
+}
+
+function CampoChave({
+  id,
+  rotulo,
+  ajuda,
+  placeholder,
+  valor,
+  onChange,
+  onBlur,
+}: {
+  id: string;
+  rotulo: string;
+  ajuda: string;
+  placeholder: string;
+  valor: string;
+  onChange: (v: string) => void;
+  onBlur: () => void;
+}) {
+  const [visivel, setVisivel] = useState(false);
+  return (
+    <>
+      <div className="flex items-center">
+        <label htmlFor={id} className="text-sm font-semibold">
+          {rotulo}
+        </label>
+        <Ajuda rotulo={`Sobre: ${rotulo}`}>{ajuda}</Ajuda>
+      </div>
+      <div className="relative">
+        <input
+          id={id}
+          type={visivel ? "text" : "password"}
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={placeholder}
+          className="h-11 w-full rounded-app-sm bg-card pr-11 pl-3 font-mono text-sm text-ink placeholder:text-sub"
+        />
+        <button
+          type="button"
+          aria-label={visivel ? "Esconder chave" : "Mostrar chave"}
+          title={visivel ? "Esconder chave" : "Mostrar chave"}
+          onClick={() => setVisivel(!visivel)}
+          className="absolute top-0 right-0 inline-flex size-11 cursor-pointer items-center justify-center text-sub"
+        >
+          {visivel ? <EyeSlashIcon className="size-5" aria-hidden /> : <EyeIcon className="size-5" aria-hidden />}
+        </button>
+      </div>
+    </>
+  );
+}
+
+// Legendas para acompanhar na TV (tela Legendas, pela Minha lista).
+function SecaoLegendas() {
+  const { ajustes, mudar } = useAjustes();
+  const [chave, setChave] = useState<string | null>(null);
+  return (
+    <Secao titulo="Legendas">
+      <div className="flex flex-col gap-1.5">
+        <CampoChave
+          id="chave-opensubtitles"
+          rotulo="Chave do OpenSubtitles"
+          placeholder="Api-Key"
+          valor={chave ?? ajustes.chaveOpenSubtitles}
+          onChange={setChave}
+          onBlur={() => {
+            if (chave !== null) mudar({ chaveOpenSubtitles: chave.trim() });
+            setChave(null);
+          }}
+          ajuda="Busca sozinha a legenda original e a em português de cada filme ou episódio. Crie uma conta gratuita em opensubtitles.com e gere a chave em Consumers (API). A conta gratuita baixa poucas legendas por dia; cada uma é baixada uma vez só e fica neste aparelho. Sem a chave, importe arquivos .srt."
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <span id="rotulo-sincronizar" className="text-sm font-semibold">
+          Pré-sincronizar com IA
+        </span>
+        <Ajuda rotulo="Sobre a pré-sincronização">
+          As duas legendas são casadas pelo tempo de cada fala. Ligado, o Claude também confere o sentido, corrigindo
+          falas que foram divididas ou juntadas de outro jeito na tradução. Roda uma vez por filme ou episódio, ao abrir
+          as legendas.
+        </Ajuda>
+        <span className="flex-1" />
+        <Switch
+          idRotulo="rotulo-sincronizar"
+          ligado={ajustes.sincronizarIA && !!ajustes.chaveClaude}
+          desativado={!ajustes.chaveClaude}
+          onChange={(sincronizarIA) => mudar({ sincronizarIA })}
+        />
+      </div>
+    </Secao>
   );
 }
 

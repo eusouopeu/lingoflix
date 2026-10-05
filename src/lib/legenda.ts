@@ -18,7 +18,10 @@ function ms(m: RegExpMatchArray): number {
 // os tempos e as seguintes o texto (tags de estilo e posição saem).
 export function lerSrt(texto: string): Fala[] {
   const falas: Fala[] = [];
-  for (const bloco of texto.replace(/^﻿/, "").replace(/\r\n?/g, "\n").split(/\n\s*\n/)) {
+  for (const bloco of texto
+    .replace(/^﻿/, "")
+    .replace(/\r\n?/g, "\n")
+    .split(/\n\s*\n/)) {
     const linhas = bloco.split("\n");
     const i = linhas.findIndex((l) => l.includes("-->"));
     if (i < 0) continue;
@@ -134,4 +137,13 @@ export function lerTempo(texto: string): number | null {
   const n = partes.map(Number);
   const s = n.length === 1 ? n[0] * 60 : n.length === 2 ? n[0] * 60 + n[1] : (n[0] * 60 + n[1]) * 60 + n[2];
   return s * 1000;
+}
+
+// Arquivos .srt antigos costumam vir em Windows-1252 em vez de UTF-8.
+export function decodificarTexto(bytes: ArrayBuffer): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder("windows-1252").decode(bytes);
+  }
 }

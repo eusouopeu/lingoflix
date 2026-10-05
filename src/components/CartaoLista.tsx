@@ -1,8 +1,10 @@
 // Cartão da Minha lista (mock do Pedro, 02/10/2026): miniatura do pôster ao
 // lado do título, metadados e ações. ⓘ abre o painel da sinopse (gêneros,
-// nível, texto justificado); ✎ abre a tela do vocabulário (screens/Vocabulario).
+// nível, texto justificado); ✎ abre a tela do vocabulário (screens/Vocabulario);
+// o balão abre as legendas para acompanhar o filme na TV (screens/Legendas).
 import {
   BookmarkIcon,
+  ChatBubbleBottomCenterTextIcon,
   CheckCircleIcon,
   InformationCircleIcon,
   PencilSquareIcon,
@@ -60,10 +62,12 @@ export function CartaoLista({
   item,
   nivelIA,
   onVocabulario,
+  onLegendas,
 }: {
   item: ItemLista;
   nivelIA?: boolean;
   onVocabulario: () => void;
+  onLegendas: () => void;
 }) {
   const t = { ...paraTitulo(item), nivelIA };
   const { ref, det, sinopse, generos, nota } = useDetalhes<HTMLLIElement>(t);
@@ -94,6 +98,7 @@ export function CartaoLista({
               ativo={item.vocabulario.length > 0}
               onClick={onVocabulario}
             />
+            <Acao icone={ChatBubbleBottomCenterTextIcon} rotulo="Legendas" onClick={onLegendas} />
             <Acao
               icone={item.status === "quero" ? BookmarkSolido : BookmarkIcon}
               rotulo="Quero ver"
@@ -107,7 +112,7 @@ export function CartaoLista({
               onClick={() => lista.alternar(t, "visto", det)}
             />
             <Acao icone={TrashIcon} rotulo="Remover da lista" onClick={() => lista.remover(item.chave)} perigo />
-            <Logos t={t} det={det} className="ml-auto" />
+            <Logos t={t} det={det} compacto className="ml-auto" />
           </div>
         </div>
       </div>

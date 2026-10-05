@@ -115,7 +115,8 @@ export function PainelFiltros<O extends string>({
         </div>
         <Ajuda rotulo="Sobre o nível">
           Nível estimado pelo gênero e pela época do título: animação e família tendem a ter fala simples; drama,
-          história e crime concentram vocabulário denso. Mandarim usa a escala HSK; os demais idiomas, o QECR.
+          história e crime concentram vocabulário denso. Com "Nível pelo Claude" ligado nos Ajustes, o selo com faísca é
+          a avaliação do Claude. Mandarim usa a escala HSK; os demais idiomas, o QECR.
         </Ajuda>
       </div>
     </>

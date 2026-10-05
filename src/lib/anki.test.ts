@@ -1,4 +1,4 @@
-import { csvAnki } from "./anki";
+import { csvAnki, csvAnkiIdioma } from "./anki";
 
 const pares = [
   { termo: "firefly", traducao: "vaga-lume", classe: "substantivo", partes: "fogo + mosca" },
@@ -27,5 +27,29 @@ describe("csv para o Anki", () => {
       frente: "estudo",
     }).split("\n");
     expect(linhas[3]).toBe("蝴蝶;borboleta;mandarim::HSK4 substantivo");
+  });
+});
+
+describe("baralho de um idioma", () => {
+  it("junta os títulos do idioma, sem repetir termo (vale o mais recente), com o nível de cada título", () => {
+    const { csv, total } = csvAnkiIdioma(
+      [
+        { idioma: "en", nivel: 0, atualizado: 1, vocabulario: [{ termo: "Run", traducao: "correr (antigo)" }] },
+        {
+          idioma: "en",
+          nivel: 2,
+          atualizado: 2,
+          vocabulario: [
+            { termo: "run", traducao: "correr" },
+            { termo: "go", traducao: "" },
+          ],
+        },
+        { idioma: "fr", nivel: 1, atualizado: 3, vocabulario: [{ termo: "chat", traducao: "gato" }] },
+      ],
+      "en",
+      "estudo",
+    );
+    expect(total).toBe(1);
+    expect(csv.split("\n").slice(3)).toEqual(["run;correr;ingles::C1"]);
   });
 });

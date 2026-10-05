@@ -1,18 +1,21 @@
-import { BookmarkIcon, Cog6ToothIcon, FilmIcon } from "@heroicons/react/24/outline";
+import { AcademicCapIcon, BookmarkIcon, Cog6ToothIcon, FilmIcon } from "@heroicons/react/24/outline";
 import {
+  AcademicCapIcon as EstudoSolido,
   BookmarkIcon as BookmarkSolido,
   Cog6ToothIcon as AjustesSolido,
   FilmIcon as FilmSolido,
 } from "@heroicons/react/24/solid";
 import { useState } from "react";
+import { diaLocal, venceu } from "./lib/revisao";
 import { Ajustes } from "./screens/Ajustes";
+import { Estudo } from "./screens/Estudo";
 import { Explorar } from "./screens/Explorar";
 import { AjustesProvider } from "./store/ajustes";
 import { MinhaLista } from "./screens/MinhaLista";
 import { ListaProvider, useLista } from "./store/ListaContexto";
 import { cn } from "./ui/cn";
 
-type Aba = "explorar" | "lista" | "ajustes";
+type Aba = "explorar" | "lista" | "estudo" | "ajustes";
 
 export function App() {
   const [aba, setAba] = useState<Aba>("explorar");
@@ -24,6 +27,7 @@ export function App() {
           <Explorar />
         </div>
         {aba === "lista" && <MinhaLista />}
+        {aba === "estudo" && <Estudo />}
         {aba === "ajustes" && <Ajustes />}
         <BarraAbas aba={aba} onChange={setAba} />
       </ListaProvider>
@@ -33,10 +37,16 @@ export function App() {
 
 function BarraAbas({ aba, onChange }: { aba: Aba; onChange: (a: Aba) => void }) {
   const { itens } = useLista();
-  const quero = itens.filter((i) => i.status === "quero").length;
+  const hoje = diaLocal();
+  const contagem: Partial<Record<Aba, number>> = {
+    lista: itens.filter((i) => i.status === "quero").length,
+    // palavras com revisão vencida hoje
+    estudo: itens.reduce((n, i) => n + i.vocabulario.filter((p) => venceu(p, hoje)).length, 0),
+  };
   const abas = [
     { id: "explorar" as const, nome: "Explorar", I: FilmIcon, IA: FilmSolido },
     { id: "lista" as const, nome: "Minha lista", I: BookmarkIcon, IA: BookmarkSolido },
+    { id: "estudo" as const, nome: "Estudo", I: AcademicCapIcon, IA: EstudoSolido },
     { id: "ajustes" as const, nome: "Ajustes", I: Cog6ToothIcon, IA: AjustesSolido },
   ];
   return (
@@ -47,6 +57,7 @@ function BarraAbas({ aba, onChange }: { aba: Aba; onChange: (a: Aba) => void }) 
       {abas.map(({ id, nome, I, IA }) => {
         const ativa = aba === id;
         const Icone = ativa ? IA : I;
+        const n = contagem[id] ?? 0;
         return (
           <button
             key={id}
@@ -60,9 +71,9 @@ function BarraAbas({ aba, onChange }: { aba: Aba; onChange: (a: Aba) => void }) 
           >
             <span className="relative">
               <Icone className="size-6" aria-hidden />
-              {id === "lista" && quero > 0 && (
+              {n > 0 && (
                 <span className="absolute -top-1 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-caneta px-1 text-[10px] font-bold text-on-caneta">
-                  {quero}
+                  {n > 99 ? "99+" : n}
                 </span>
               )}
             </span>

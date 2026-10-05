@@ -1,10 +1,13 @@
-// Tradução automática do vocabulário com o Claude Haiku 4.5 (pedido do
-// Pedro: sempre o Haiku). A chave é do próprio usuário, guardada só no
-// aparelho (aba Ajustes), e a chamada sai direto do app para a API.
+// Tradução automática do vocabulário e nível de dificuldade dos títulos com o
+// Claude Haiku 4.5 (pedido do Pedro: sempre o Haiku). A chave é do próprio
+// usuário, guardada só no aparelho (aba Ajustes), e a chamada sai direto do
+// app para a API.
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { IDIOMAS } from "./catalogo";
+import { IDIOMAS, NOME_GENERO } from "./catalogo";
+import type { Nivel } from "./nivel";
+import type { Titulo } from "./tmdb";
 import type { Par } from "./vocabulario";
 
 const MODELO = "claude-haiku-4-5";
@@ -72,6 +75,46 @@ export async function analisarPares(chave: string, codigoIdioma: string, pares: 
     classe: saida[i].classe,
     partes: saida[i].partes || undefined,
   }));
+}
+
+const ESCALA = ["facil", "intermediario", "avancado"] as const;
+
+const RespostaNiveis = z.object({
+  niveis: z.array(z.object({ k: z.string(), nivel: z.enum(ESCALA) })),
+});
+
+const SISTEMA_NIVEL = `Você classifica filmes e séries pela dificuldade do áudio original para um brasileiro que estuda o idioma em que o título é falado.
+Use o que você sabe do título (diálogos, ritmo da fala, gírias, sotaques, jargão técnico, linguagem de época); a sinopse e os gêneros ajudam quando você não o conhece.
+- "facil": fala clara e lenta, vocabulário do dia a dia (QECR A2 / HSK 3). Ex.: animações infantis, sitcoms simples.
+- "intermediario": conversa natural com alguma gíria ou ritmo rápido (QECR B1 / HSK 4).
+- "avancado": diálogo denso, rápido, técnico, de época ou com sotaques fortes (QECR C1 / HSK 6).
+Responda um item por título recebido, com o mesmo "k".`;
+
+// Nível de cada título (chave "tipo-id" → 0/1/2). Títulos que a resposta
+// deixar de fora simplesmente não voltam (ficam com a heurística).
+export async function estimarNiveis(chave: string, titulos: Titulo[]): Promise<Record<string, Nivel>> {
+  const entrada = titulos.map((t) => ({
+    k: `${t.tipo}-${t.id}`,
+    titulo: t.tituloOriginal || t.titulo,
+    tipo: t.tipo === "filme" ? "filme" : "série",
+    idioma: IDIOMAS.find((l) => l.codigo === t.idioma)?.nome ?? t.idioma,
+    ano: t.ano,
+    generos: t.generos.map((g) => NOME_GENERO[g]).filter(Boolean),
+    sinopse: t.sinopse.slice(0, 300),
+  }));
+  const resposta = await cliente(chave).messages.parse({
+    model: MODELO,
+    max_tokens: 2000,
+    system: SISTEMA_NIVEL,
+    messages: [{ role: "user", content: JSON.stringify({ titulos: entrada }) }],
+    output_config: { format: zodOutputFormat(RespostaNiveis) },
+  });
+  const pedidos = new Set(entrada.map((e) => e.k));
+  return Object.fromEntries(
+    (resposta.parsed_output?.niveis ?? [])
+      .filter((n) => pedidos.has(n.k))
+      .map((n) => [n.k, ESCALA.indexOf(n.nivel) as Nivel]),
+  );
 }
 
 export function mensagemErro(e: unknown): string {

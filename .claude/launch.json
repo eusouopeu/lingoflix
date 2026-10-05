@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "lingoflix", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5174"], "port": 5174 }
+    { "name": "lingoflix", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5174"], "port": 5174 },
+    { "name": "lingoflix-alt", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5175"], "port": 5175 }
   ]
 }

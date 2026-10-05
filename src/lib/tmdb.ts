@@ -1,6 +1,6 @@
-// Cliente da API do TMDB: busca paginada (discover) e detalhes de um título
-// (trailer no idioma original e onde assistir no Brasil).
-import { PLATAFORMAS, type Ordem, type Tipo } from "./catalogo";
+// Cliente da API do TMDB: busca paginada (discover), busca por nome e
+// detalhes de um título (trailer no idioma original e onde assistir no Brasil).
+import { IDIOMAS, PLATAFORMAS, type Ordem, type Tipo } from "./catalogo";
 import { calcularNivel, type Nivel } from "./nivel";
 
 const BASE = "https://api.themoviedb.org/3";
@@ -18,6 +18,7 @@ export interface Titulo {
   ano: number | null;
   nota: number;
   nivel: Nivel;
+  nivelIA?: boolean; // nível estimado pelo Claude (não pela heurística)
   generos: number[];
 }
 
@@ -98,6 +99,35 @@ async function obter<T>(url: string, signal?: AbortSignal): Promise<T> {
 export async function buscarPagina(f: Filtro, signal?: AbortSignal) {
   const d = await obter<{ results: Bruto[]; total_pages: number }>(urlDescobrir(f), signal);
   return { itens: d.results.map((b) => normalizar(b, f.tipo)), totalPaginas: d.total_pages };
+}
+
+// Busca por nome (filmes e séries juntos), em português e no título original.
+export function urlBuscar(texto: string, pagina: number, chave = CHAVE): string {
+  const p = new URLSearchParams({
+    api_key: chave,
+    language: "pt-BR",
+    query: texto.trim(),
+    page: String(pagina),
+    include_adult: "false",
+  });
+  return `${BASE}/search/multi?${p}`;
+}
+
+const CODIGOS = new Set<string>(IDIOMAS.map((l) => l.codigo));
+
+// Só filmes e séries (a busca também devolve pessoas) falados num idioma do app.
+export function filtrarBusca(results: (Bruto & { media_type?: string })[]): Titulo[] {
+  return results
+    .filter((b) => (b.media_type === "movie" || b.media_type === "tv") && CODIGOS.has(b.original_language))
+    .map((b) => normalizar({ ...b, genre_ids: b.genre_ids ?? [] }, b.media_type === "movie" ? "filme" : "serie"));
+}
+
+export async function buscarPorNome(texto: string, pagina: number, signal?: AbortSignal) {
+  const d = await obter<{ results: (Bruto & { media_type?: string })[]; total_pages: number }>(
+    urlBuscar(texto, pagina),
+    signal,
+  );
+  return { itens: filtrarBusca(d.results), totalPaginas: d.total_pages };
 }
 
 export interface Detalhes {

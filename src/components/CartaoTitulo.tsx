@@ -36,7 +36,7 @@ export function CartaoTitulo({ t }: { t: Titulo }) {
                 {t.titulo}
               </span>
             )}
-            <SeloNivel nivel={t.nivel} idioma={t.idioma} className="absolute top-2 left-2" />
+            <SeloNivel nivel={t.nivel} idioma={t.idioma} ia={t.nivelIA} className="absolute top-2 left-2" />
           </>
         )}
       </button>
@@ -61,7 +61,7 @@ export function CartaoTitulo({ t }: { t: Titulo }) {
             onClick={() => lista.alternar(t, "visto", det)}
             className="size-[34px]"
           />
-          <Logos det={det} className="ml-auto" />
+          <Logos t={t} det={det} className="ml-auto" />
         </div>
       </div>
     </article>

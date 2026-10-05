@@ -8,11 +8,22 @@ import { contarAjustes, PainelFiltros } from "../components/PainelFiltros";
 import { ORDENS_LISTA } from "../lib/catalogo";
 import { filtrarLista, type FiltrosLista } from "../lib/filtros";
 import { useLista } from "../store/ListaContexto";
-import type { Status } from "../store/lista";
+import { paraTitulo, type Status } from "../store/lista";
+import { useNiveisIA } from "../store/useNiveisIA";
 import { Segmentado } from "../ui/Segmentado";
+import { Vocabulario } from "./Vocabulario";
 
 export function MinhaLista() {
-  const { itens } = useLista();
+  const { itens: salvos } = useLista();
+  // com a opção ligada, o nível do Claude vale também para filtrar a lista
+  const comNivel = useNiveisIA(salvos.map(paraTitulo));
+  const ia = new Set<string>();
+  const itens = salvos.map((i) => {
+    const t = comNivel(paraTitulo(i));
+    if (!t.nivelIA) return i;
+    ia.add(i.chave);
+    return { ...i, nivel: t.nivel };
+  });
   const [aba, setAba] = useState<Status>("quero");
   const [f, setF] = useState<FiltrosLista>({
     tipo: null,
@@ -23,6 +34,8 @@ export function MinhaLista() {
     ordem: "adicionado",
   });
   const [ajustes, setAjustes] = useState(false);
+  // tela do vocabulário aberta: título atual e a ordem da lista ao abrir
+  const [vocab, setVocab] = useState<{ chave: string; ordem: string[] } | null>(null);
   const filtrados = filtrarLista(itens, f);
   const daAba = filtrados.filter((i) => i.status === aba);
   const filtrando = daAba.length < itens.filter((i) => i.status === aba).length;
@@ -62,11 +75,24 @@ export function MinhaLista() {
         ) : (
           <ul className="flex flex-col gap-3">
             {daAba.map((i) => (
-              <CartaoLista key={i.chave} item={i} />
+              <CartaoLista
+                key={i.chave}
+                item={i}
+                nivelIA={ia.has(i.chave)}
+                onVocabulario={() => setVocab({ chave: i.chave, ordem: daAba.map((x) => x.chave) })}
+              />
             ))}
           </ul>
         )}
       </main>
+      {vocab && (
+        <Vocabulario
+          chave={vocab.chave}
+          ordem={vocab.ordem}
+          onTrocar={(chave) => setVocab({ ...vocab, chave })}
+          onFechar={() => setVocab(null)}
+        />
+      )}
     </>
   );
 }

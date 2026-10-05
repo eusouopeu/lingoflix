@@ -1,10 +1,14 @@
 // Aba Ajustes: chave da API do Claude (Haiku 4.5), tradução automática do
-// vocabulário e a frente dos flashcards exportados para o Anki.
+// vocabulário, nível pelo Claude, frente dos flashcards e backup da lista.
 import { CheckCircleIcon, ExclamationCircleIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Cabecalho } from "../components/Cabecalho";
+import { nomeArquivo, salvarArquivo } from "../lib/arquivo";
+import { gerarBackup, itensParaRestaurar, juntarDias, lerBackup } from "../lib/backup";
 import { analisarPares, mensagemErro } from "../lib/claude";
+import { diaLocal } from "../lib/revisao";
 import { useAjustes } from "../store/ajustes";
+import { useLista } from "../store/ListaContexto";
 import { Ajuda } from "../ui/Ajuda";
 import { cn } from "../ui/cn";
 import { Segmentado } from "../ui/Segmentado";
@@ -28,7 +32,7 @@ export function Ajustes() {
 
   const salvarChave = () => {
     if (chave !== null && chave.trim() !== ajustes.chaveClaude) {
-      mudar({ chaveClaude: chave.trim(), ...(chave.trim() ? {} : { traducaoAuto: false }) });
+      mudar({ chaveClaude: chave.trim(), ...(chave.trim() ? {} : { traducaoAuto: false, nivelIA: false }) });
       setTeste(null);
     }
     setChave(null);
@@ -125,6 +129,24 @@ export function Ajustes() {
               onChange={(traducaoAuto) => mudar({ traducaoAuto })}
             />
           </div>
+
+          <div className="flex items-center gap-2">
+            <span id="rotulo-nivel" className="text-sm font-semibold">
+              Nível pelo Claude
+            </span>
+            <Ajuda rotulo="Sobre o nível pelo Claude">
+              O Claude avalia a dificuldade do áudio original de cada título (ritmo, gírias, sotaques, jargão) em vez da
+              estimativa pelo gênero. Os títulos são avaliados em lotes conforme aparecem, e cada resultado fica
+              guardado no aparelho, sem novo custo. O selo ganha uma faísca.
+            </Ajuda>
+            <span className="flex-1" />
+            <Switch
+              idRotulo="rotulo-nivel"
+              ligado={ajustes.nivelIA && !!ajustes.chaveClaude}
+              desativado={!ajustes.chaveClaude}
+              onChange={(nivelIA) => mudar({ nivelIA })}
+            />
+          </div>
         </Secao>
 
         <Secao titulo="Flashcards (Anki)">
@@ -147,7 +169,107 @@ export function Ajustes() {
             />
           </div>
         </Secao>
+
+        <Backup />
       </main>
     </>
+  );
+}
+
+// Backup em .json (lista, vocabulário, revisões e dias de estudo; nunca a
+// chave da API). Restaurar mescla: fica a versão mais recente de cada título.
+function Backup() {
+  const { itens, importar } = useLista();
+  const { ajustes, mudar } = useAjustes();
+  const arquivo = useRef<HTMLInputElement>(null);
+  const [aviso, setAviso] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const exportar = async () => {
+    setAviso(null);
+    try {
+      await salvarArquivo(
+        nomeArquivo(`backup ${diaLocal()}`, "json"),
+        gerarBackup(itens, ajustes.diasEstudo),
+        "Salvar backup",
+        "application/json",
+      );
+    } catch {
+      /* compartilhamento cancelado */
+    }
+  };
+
+  const restaurar = async (f: File | undefined) => {
+    if (!f) return;
+    try {
+      const b = lerBackup(await f.text());
+      const novos = itensParaRestaurar(itens, b.lista);
+      await importar(novos);
+      mudar((a) => ({ diasEstudo: juntarDias(a.diasEstudo, b.diasEstudo) }));
+      setAviso({
+        ok: true,
+        msg: novos.length
+          ? `${novos.length} ${novos.length === 1 ? "título restaurado" : "títulos restaurados"}.`
+          : "A lista já estava em dia com o backup.",
+      });
+    } catch (e) {
+      setAviso({ ok: false, msg: e instanceof Error ? e.message : "Não foi possível restaurar." });
+    } finally {
+      if (arquivo.current) arquivo.current.value = "";
+    }
+  };
+
+  return (
+    <Secao titulo="Backup">
+      <div className="flex items-center">
+        <p className="flex-1 text-sm text-sub">
+          {itens.length} {itens.length === 1 ? "título" : "títulos"} na lista
+        </p>
+        <Ajuda rotulo="Sobre o backup">
+          A lista fica só neste aparelho e some se o app for desinstalado. O backup (.json) guarda títulos, vocabulário,
+          revisões e dias de estudo; a chave da API não entra. Restaurar não apaga nada: junta o backup à lista e, para
+          cada título, fica a versão mais recente.
+        </Ajuda>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={exportar}
+          disabled={itens.length === 0}
+          className="h-10 flex-1 cursor-pointer rounded-full bg-card-2 px-4 text-sm font-semibold text-ink transition-transform duration-150 active:scale-95 disabled:opacity-40"
+        >
+          Fazer backup
+        </button>
+        <button
+          type="button"
+          onClick={() => arquivo.current?.click()}
+          className="h-10 flex-1 cursor-pointer rounded-full bg-card-2 px-4 text-sm font-semibold text-ink transition-transform duration-150 active:scale-95"
+        >
+          Restaurar
+        </button>
+        <input
+          ref={arquivo}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => restaurar(e.target.files?.[0])}
+        />
+      </div>
+      {aviso && (
+        <p
+          role="status"
+          className={cn(
+            "flex animate-surge items-center gap-1 text-xs font-semibold",
+            aviso.ok ? "text-ok" : "text-erro",
+          )}
+        >
+          {aviso.ok ? (
+            <CheckCircleIcon className="size-4 shrink-0" aria-hidden />
+          ) : (
+            <ExclamationCircleIcon className="size-4 shrink-0" aria-hidden />
+          )}
+          {aviso.msg}
+        </p>
+      )}
+    </Secao>
   );
 }

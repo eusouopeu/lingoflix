@@ -1,10 +1,12 @@
 // Vocabulário de cada título da lista: pares termo → tradução.
+import type { Revisao } from "./revisao";
 
 export interface Par {
   termo: string; // no idioma estudado
   traducao: string; // em português
   classe?: string; // classe gramatical (preenchida pela tradução automática)
   partes?: string; // significado das partes da palavra, ex.: "fogo + mosca"
+  revisao?: Revisao; // estado da revisão espaçada (aba Estudo)
 }
 
 // Anotações em texto livre (versões até a 3) viram pares: cada linha é um

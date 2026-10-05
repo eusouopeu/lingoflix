@@ -8,6 +8,7 @@ interface Contexto {
   alternar: (t: Titulo, status: Status, det?: Detalhes | null) => void;
   atualizar: (item: ItemLista, mudanca: Partial<ItemLista>) => void;
   remover: (chave: string) => void;
+  importar: (novos: ItemLista[]) => Promise<void>; // backup: grava sem mexer no `atualizado`
 }
 
 const Ctx = createContext<Contexto | null>(null);
@@ -61,6 +62,11 @@ export function ListaProvider({ children }: { children: ReactNode }) {
       });
     },
     atualizar: (item, mudanca) => gravar({ ...item, ...mudanca, atualizado: Date.now() }),
+    importar: async (novos) => {
+      const r = await obterRepo();
+      for (const i of novos) await r.salvar(i);
+      setItens(await r.todos());
+    },
     remover: (chave) => {
       setItens((xs) => xs.filter((x) => x.chave !== chave));
       obterRepo()

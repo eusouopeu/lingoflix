@@ -1,12 +1,13 @@
 // Peças comuns aos dois cartões de título (grade do Explorar e linha da Minha
 // lista): detalhes sob demanda, metadados, logos de streaming e etiquetas.
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { FilmIcon, StarIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
 import { corGenero, NOME_GENERO, PLATAFORMAS } from "../lib/catalogo";
 import { faixaNota } from "../lib/nota";
-import { destinoApp, unificarPlataformas, type Plataforma } from "../lib/streaming";
+import { destinoApp, linkTitulo, unificarPlataformas, type Plataforma } from "../lib/streaming";
 import { buscarDetalhes, IMG, type Detalhes, type Titulo } from "../lib/tmdb";
+import { idsStreaming } from "../lib/wikidata";
 import { cn } from "../ui/cn";
 
 // Busca duração, trailer e streamings quando o cartão chega perto da tela.
@@ -82,24 +83,34 @@ export function Metadados({
   );
 }
 
-// Abre o app do streaming (pelo nome do pacote Android); sem o app, ou no
-// navegador, abre o site do serviço (ou a página do TMDB, para os demais).
-async function abrirStreaming(p: Plataforma, linkTmdb: string | null) {
+// Plugin nativo local (android/.../AbrirNoApp.java): abre a URL presa ao
+// pacote do app do streaming; sem isso o Android poderia abrir o navegador.
+const AbrirNoApp = registerPlugin<{
+  abrir(o: { url: string; pacote: string }): Promise<{ aberto: "titulo" | "app" | "nenhum" }>;
+}>("AbrirNoApp");
+
+// Abre o título no app do streaming: na página dele quando o Wikidata tem o
+// ID, senão na busca do app pelo nome. Sem o app (ou no navegador), abre o
+// mesmo endereço no site; serviço desconhecido vai para a página do TMDB.
+async function abrirStreaming(p: Plataforma, t: Titulo, linkTmdb: string | null) {
   const destino = destinoApp(p);
-  if (destino && Capacitor.isNativePlatform()) {
+  if (!destino) {
+    if (linkTmdb) window.open(linkTmdb, "_blank", "noopener");
+    return;
+  }
+  const { url } = linkTitulo(destino, await idsStreaming(t.tipo, t.id), t);
+  if (Capacitor.isNativePlatform()) {
     try {
-      const { AppLauncher } = await import("@capacitor/app-launcher");
-      if ((await AppLauncher.openUrl({ url: destino.pacote })).completed) return;
+      if ((await AbrirNoApp.abrir({ url, pacote: destino.pacote })).aberto !== "nenhum") return;
     } catch {
-      /* app não instalado: segue para o site */
+      /* plugin indisponível: segue para o site */
     }
   }
-  const url = destino?.web ?? linkTmdb;
-  if (url) window.open(url, "_blank", "noopener");
+  window.open(url, "_blank", "noopener");
 }
 
 // Um ícone por serviço (os do filtro primeiro): 3 no celular, 4 em tela maior.
-export function Logos({ det, className }: { det: Detalhes | null; className?: string }) {
+export function Logos({ t, det, className }: { t: Titulo; det: Detalhes | null; className?: string }) {
   if (!det?.plataformas.length) return null;
   const logos = unificarPlataformas(det.plataformas)
     .sort((a, b) => Number(NOSSAS.has(b.id)) - Number(NOSSAS.has(a.id)))
@@ -110,9 +121,9 @@ export function Logos({ det, className }: { det: Detalhes | null; className?: st
         <button
           key={p.id}
           type="button"
-          aria-label={`Abrir ${p.nome}`}
+          aria-label={`Abrir ${t.titulo} no ${p.nome}`}
           title={p.nome}
-          onClick={() => abrirStreaming(p, det.link)}
+          onClick={() => abrirStreaming(p, t, det.link)}
           className={cn(
             "shrink-0 cursor-pointer transition-transform duration-150 active:scale-90",
             i === 3 && "hidden sm:block",

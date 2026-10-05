@@ -29,12 +29,14 @@ const NOME_CLASSE: Record<string, string> = {
 export function useSalvarTermo(item: ItemLista, termo: string) {
   const lista = useLista();
   const { marcarEstudo } = useAjustes();
-  const salvo = item.vocabulario.some((p) => p.termo.trim().toLowerCase() === termo.toLowerCase());
+  // `item` pode vir com o idioma trocado pela legenda: grava sempre o item real da lista
+  const real = lista.itens.find((i) => i.chave === item.chave) ?? item;
+  const salvo = real.vocabulario.some((p) => p.termo.trim().toLowerCase() === termo.toLowerCase());
   const salvar = (s: Significado | null) => {
     if (salvo) return;
-    lista.atualizar(item, {
+    lista.atualizar(real, {
       vocabulario: [
-        ...item.vocabulario,
+        ...real.vocabulario,
         { termo, traducao: s?.traducao ?? "", classe: s?.classe, partes: s?.partes || undefined },
       ],
     });

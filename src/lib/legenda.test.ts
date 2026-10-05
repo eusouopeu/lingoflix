@@ -105,3 +105,15 @@ describe("decodificarTexto", () => {
     expect(decodificarTexto(new Uint8Array([0x61, 0xe7, 0xe3, 0x6f]).buffer)).toBe("ação");
   });
 });
+
+describe("decodificarTexto (chinês)", () => {
+  // “你好” em GBK
+  const gbk = new Uint8Array([0xc4, 0xe3, 0xba, 0xc3]).buffer;
+  it("GBK só para mandarim", () => {
+    expect(decodificarTexto(gbk, "zh")).toBe("你好");
+    expect(decodificarTexto(new Uint8Array([0x61, 0xe7, 0xe3, 0x6f]).buffer, "en")).toBe("ação");
+  });
+  it("UTF-16 com marca de ordem", () => {
+    expect(decodificarTexto(new Uint8Array([0xff, 0xfe, 0x61, 0x00, 0x62, 0x00]).buffer)).toBe("ab");
+  });
+});

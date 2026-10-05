@@ -71,6 +71,7 @@ export function PrepararLegendas({
     const mesmaOriginal = atual?.origem.original === orig.nome;
     const l: Legenda = {
       chave,
+      ...(atual?.idioma ? { idioma: atual.idioma } : {}),
       original: orig.falas,
       pt: ptFalas,
       casamento,

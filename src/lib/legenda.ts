@@ -139,11 +139,19 @@ export function lerTempo(texto: string): number | null {
   return s * 1000;
 }
 
-// Arquivos .srt antigos costumam vir em Windows-1252 em vez de UTF-8.
-export function decodificarTexto(bytes: ArrayBuffer): string {
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  } catch {
-    return new TextDecoder("windows-1252").decode(bytes);
+// Arquivos .srt antigos costumam vir em Windows-1252 em vez de UTF-8; os
+// chineses, em GBK ou Big5; alguns trazem UTF-16 com marca de ordem de bytes.
+// GBK/Big5 só entram para `zh`: bytes de Windows-1252 também formam pares válidos nelas.
+export function decodificarTexto(bytes: ArrayBuffer, idioma?: string): string {
+  const b = new Uint8Array(bytes);
+  if (b[0] === 0xff && b[1] === 0xfe) return new TextDecoder("utf-16le").decode(bytes);
+  if (b[0] === 0xfe && b[1] === 0xff) return new TextDecoder("utf-16be").decode(bytes);
+  for (const codificacao of idioma === "zh" ? ["utf-8", "gb18030", "big5"] : ["utf-8"]) {
+    try {
+      return new TextDecoder(codificacao, { fatal: true }).decode(bytes);
+    } catch {
+      /* tenta a próxima */
+    }
   }
+  return new TextDecoder("windows-1252").decode(bytes);
 }

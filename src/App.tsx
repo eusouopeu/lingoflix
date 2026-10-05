@@ -1,6 +1,7 @@
-import { AcademicCapIcon, BookmarkIcon, Cog6ToothIcon, FilmIcon } from "@heroicons/react/24/outline";
+import { AcademicCapIcon, ArrowUpTrayIcon, BookmarkIcon, Cog6ToothIcon, FilmIcon } from "@heroicons/react/24/outline";
 import {
   AcademicCapIcon as EstudoSolido,
+  ArrowUpTrayIcon as ImportarSolido,
   BookmarkIcon as BookmarkSolido,
   Cog6ToothIcon as AjustesSolido,
   FilmIcon as FilmSolido,
@@ -10,12 +11,13 @@ import { diaLocal, venceu } from "./lib/revisao";
 import { Ajustes } from "./screens/Ajustes";
 import { Estudo } from "./screens/Estudo";
 import { Explorar } from "./screens/Explorar";
+import { Importar } from "./screens/Importar";
 import { AjustesProvider } from "./store/ajustes";
 import { MinhaLista } from "./screens/MinhaLista";
 import { ListaProvider, useLista } from "./store/ListaContexto";
 import { cn } from "./ui/cn";
 
-type Aba = "explorar" | "lista" | "estudo" | "ajustes";
+type Aba = "explorar" | "lista" | "estudo" | "importar" | "ajustes";
 
 export function App() {
   const [aba, setAba] = useState<Aba>("explorar");
@@ -28,6 +30,7 @@ export function App() {
         </div>
         {aba === "lista" && <MinhaLista />}
         {aba === "estudo" && <Estudo />}
+        {aba === "importar" && <Importar />}
         {aba === "ajustes" && <Ajustes />}
         <BarraAbas aba={aba} onChange={setAba} />
       </ListaProvider>
@@ -47,6 +50,7 @@ function BarraAbas({ aba, onChange }: { aba: Aba; onChange: (a: Aba) => void }) 
     { id: "explorar" as const, nome: "Explorar", I: FilmIcon, IA: FilmSolido },
     { id: "lista" as const, nome: "Minha lista", I: BookmarkIcon, IA: BookmarkSolido },
     { id: "estudo" as const, nome: "Estudo", I: AcademicCapIcon, IA: EstudoSolido },
+    { id: "importar" as const, nome: "Importar", I: ArrowUpTrayIcon, IA: ImportarSolido },
     { id: "ajustes" as const, nome: "Ajustes", I: Cog6ToothIcon, IA: AjustesSolido },
   ];
   return (

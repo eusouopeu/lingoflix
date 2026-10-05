@@ -10,6 +10,7 @@ import { abrirBanco } from "./banco";
 
 export interface Legenda {
   chave: string; // ver chaveLegenda
+  idioma?: string; // idioma da legenda original quando difere do idioma do título (ex.: série em inglês estudada em mandarim)
   original: Fala[];
   pt: Fala[];
   casamento: string[]; // texto em PT de cada fala original

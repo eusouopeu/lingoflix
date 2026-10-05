@@ -116,7 +116,14 @@ function Conteudo({
           />
         </main>
       )}
-      {fase === "pronto" && leg && <Leitor key={versao} item={item} inicial={leg} onMudar={setLeg} />}
+      {fase === "pronto" && leg && (
+        <Leitor
+          key={versao}
+          item={leg.idioma ? { ...item, idioma: leg.idioma } : item}
+          inicial={leg}
+          onMudar={setLeg}
+        />
+      )}
     </>
   );
 }

@@ -7,3 +7,6 @@ android/.gradle
 android/local.properties
 .DS_Store
 *.apk
+
+# Legendas baixadas (direitos de terceiros)
+legendas/

@@ -1,5 +1,5 @@
 import { PLATAFORMAS } from "./catalogo";
-import { filtrarBusca, urlBuscar, urlDescobrir } from "./tmdb";
+import { filtrarBusca, lerTemporadas, urlBuscar, urlDescobrir } from "./tmdb";
 
 describe("urlDescobrir", () => {
   it("monta busca de séries com idioma, página, ordem e todas as plataformas", () => {
@@ -49,5 +49,19 @@ describe("busca por nome", () => {
       [1, "filme", 2001],
       [2, "serie", 2017],
     ]);
+  });
+});
+
+describe("lerTemporadas", () => {
+  it("tira a temporada 0 (especiais) e as sem episódios", () => {
+    expect(
+      lerTemporadas({
+        seasons: [
+          { season_number: 0, episode_count: 3, name: "Especiais" },
+          { season_number: 1, episode_count: 10, name: "Temporada 1" },
+          { season_number: 2, episode_count: 0, name: "Temporada 2" },
+        ],
+      }),
+    ).toEqual([{ numero: 1, episodios: 10, nome: "Temporada 1" }]);
   });
 });

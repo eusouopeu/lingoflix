@@ -202,3 +202,23 @@ export function buscarDetalhes(t: Pick<Titulo, "tipo" | "id" | "idioma">): Promi
   }
   return p;
 }
+
+// Temporadas de uma série (tela Legendas: escolher o episódio).
+export interface Temporada {
+  numero: number;
+  episodios: number;
+  nome: string;
+}
+
+export function lerTemporadas(d: {
+  seasons?: { season_number: number; episode_count: number; name: string }[];
+}): Temporada[] {
+  return (d.seasons ?? [])
+    .filter((s) => s.season_number > 0 && s.episode_count > 0)
+    .map((s) => ({ numero: s.season_number, episodios: s.episode_count, nome: s.name }));
+}
+
+export async function buscarTemporadas(id: number): Promise<Temporada[]> {
+  const q = new URLSearchParams({ api_key: CHAVE, language: "pt-BR" });
+  return lerTemporadas(await obter(`${BASE}/tv/${id}?${q}`));
+}

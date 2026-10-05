@@ -1,5 +1,6 @@
-// Ajustes do app: chave da API do Claude, tradução automática, nível por IA,
-// frente dos flashcards, o último filtro do Explorar e os dias de estudo.
+// Ajustes do app: chaves das APIs (Claude e OpenSubtitles), tradução automática,
+// nível por IA, pré-sincronização das legendas, frente dos flashcards, o último
+// filtro do Explorar e os dias de estudo.
 // SQLite no aparelho (tabela chave/valor), localStorage no navegador.
 import { Capacitor } from "@capacitor/core";
 import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
@@ -20,6 +21,8 @@ export interface FiltroExplorar {
 
 export interface Ajustes {
   chaveClaude: string;
+  chaveOpenSubtitles: string;
+  sincronizarIA: boolean; // legendas: casar PT ⇄ original com o Haiku
   traducaoAuto: boolean;
   nivelIA: boolean;
   frente: Frente;
@@ -29,6 +32,8 @@ export interface Ajustes {
 
 const PADRAO: Ajustes = {
   chaveClaude: "",
+  chaveOpenSubtitles: "",
+  sincronizarIA: false,
   traducaoAuto: false,
   nivelIA: false,
   frente: "pt",

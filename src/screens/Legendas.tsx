@@ -6,11 +6,12 @@
 import { AdjustmentsHorizontalIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { BackwardIcon, ForwardIcon, PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BalaoTermo } from "../components/BalaoTermo";
 import { FalaTocavel } from "../components/FalaTocavel";
 import { FolhaTermo } from "../components/FolhaTermo";
 import { PrepararLegendas } from "../components/PrepararLegendas";
-import type { Explicacao } from "../lib/claude";
 import { casarPorTempo, dividirPalavras, falaEm, formatarTempo, lerTempo } from "../lib/legenda";
+import type { Significado } from "../lib/tradutor";
 import { useLista } from "../store/ListaContexto";
 import { chaveLegenda, gravarLegenda, lerLegenda, type Legenda } from "../store/legendas";
 import type { ItemLista } from "../store/lista";
@@ -124,7 +125,9 @@ function Leitor({ item, inicial, onMudar }: { item: ItemLista; inicial: Legenda;
   const [leg, setLegLocal] = useState(inicial);
   const [pos, setPos] = useState(inicial.posicao);
   const [tocando, setTocando] = useState(false);
-  const [sel, setSel] = useState<{ fala: number; termo: string } | null>(null);
+  // termo tocado: primeiro o balão; tocando na tradução, a folha completa
+  const [sel, setSel] = useState<{ fala: number; termo: string; caixa: DOMRect } | null>(null);
+  const [folha, setFolha] = useState<{ fala: number; termo: string; previa: Significado | null } | null>(null);
   const [tempoTV, setTempoTV] = useState("");
   const base = useRef({ pos: inicial.posicao, em: 0 });
   const ultimo = useRef({ leg, pos });
@@ -220,7 +223,7 @@ function Leitor({ item, inicial, onMudar }: { item: ItemLista; inicial: Legenda;
     salvar({ ...leg, deslocamento, casamento: casarPorTempo(falas, leg.pt, deslocamento), ia: false });
   };
 
-  const abrirTermo = (ini: number, fim: number) => {
+  const abrirTermo = (ini: number, fim: number, caixa: DOMRect) => {
     if (atual < 0) return;
     if (tocando) pausar();
     const termo = tokens
@@ -228,7 +231,15 @@ function Leitor({ item, inicial, onMudar }: { item: ItemLista; inicial: Legenda;
       .map((t) => t.texto)
       .join("")
       .trim();
-    setSel({ fala: atual, termo });
+    setSel({ fala: atual, termo, caixa });
+  };
+
+  const guardarTermo = (fala: number, termo: string, s: Significado) => {
+    const l = ultimo.current.leg;
+    const k = `${fala}|${termo}`;
+    // não troca o significado completo (Claude) por um só com a tradução
+    if (l.termos[k]?.classe && !s.classe) return;
+    salvar({ ...l, termos: { ...l.termos, [k]: s } });
   };
 
   const temPt = leg.pt.length > 0;
@@ -390,17 +401,31 @@ function Leitor({ item, inicial, onMudar }: { item: ItemLista; inicial: Legenda;
       </footer>
 
       {sel && (
-        <FolhaTermo
+        <BalaoTermo
+          key={`${sel.fala}|${sel.termo}|${sel.caixa.left}`}
           item={item}
           termo={sel.termo}
           fala={falas[sel.fala].texto}
-          falaPt={leg.casamento[sel.fala] ?? ""}
-          explicacao={leg.termos[`${sel.fala}|${sel.termo}`]}
-          onExplicado={(e: Explicacao) => {
-            const l = ultimo.current.leg;
-            salvar({ ...l, termos: { ...l.termos, [`${sel.fala}|${sel.termo}`]: e } });
+          caixa={sel.caixa}
+          conhecido={leg.termos[`${sel.fala}|${sel.termo}`]}
+          onTraduzido={(s) => guardarTermo(sel.fala, sel.termo, s)}
+          onDetalhes={(previa) => {
+            setFolha({ fala: sel.fala, termo: sel.termo, previa });
+            setSel(null);
           }}
           onFechar={() => setSel(null)}
+        />
+      )}
+      {folha && (
+        <FolhaTermo
+          item={item}
+          termo={folha.termo}
+          fala={falas[folha.fala].texto}
+          falaPt={leg.casamento[folha.fala] ?? ""}
+          explicacao={leg.termos[`${folha.fala}|${folha.termo}`]}
+          previa={folha.previa}
+          onExplicado={(e) => guardarTermo(folha.fala, folha.termo, e)}
+          onFechar={() => setFolha(null)}
         />
       )}
     </>

@@ -3,7 +3,8 @@
 // ele segue para a revisão (aba Estudo) e para o baralho do Anki.
 import { ArrowPathIcon, CheckIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
-import { explicarTermo, mensagemErro, type Explicacao } from "../lib/claude";
+import { explicarTermo, mensagemErro } from "../lib/claude";
+import { traduzirTermo, type Significado } from "../lib/tradutor";
 import { useAjustes } from "../store/ajustes";
 import { useLista } from "../store/ListaContexto";
 import type { ItemLista } from "../store/lista";
@@ -23,12 +24,35 @@ const NOME_CLASSE: Record<string, string> = {
   expressao: "expressão",
 };
 
+// Salvar o termo no vocabulário do título (folha e balão). Sem tradução, o par
+// fica com ela vazia: a tradução automática do vocabulário completa depois.
+export function useSalvarTermo(item: ItemLista, termo: string) {
+  const lista = useLista();
+  const { marcarEstudo } = useAjustes();
+  const salvo = item.vocabulario.some((p) => p.termo.trim().toLowerCase() === termo.toLowerCase());
+  const salvar = (s: Significado | null) => {
+    if (salvo) return;
+    lista.atualizar(item, {
+      vocabulario: [
+        ...item.vocabulario,
+        { termo, traducao: s?.traducao ?? "", classe: s?.classe, partes: s?.partes || undefined },
+      ],
+    });
+    marcarEstudo();
+  };
+  return { salvo, salvar };
+}
+
+// A folha completa usa o Claude quando há chave (classe, partes e tradução no
+// contexto da fala); sem chave, a tradução do aparelho. `previa` é o que o
+// balão já mostrou, exibido enquanto o Claude responde.
 export function FolhaTermo({
   item,
   termo,
   fala,
   falaPt,
   explicacao: inicial,
+  previa,
   onExplicado,
   onFechar,
 }: {
@@ -36,46 +60,36 @@ export function FolhaTermo({
   termo: string;
   fala: string;
   falaPt: string;
-  explicacao?: Explicacao; // já consultada antes (guardada com a legenda)
-  onExplicado: (e: Explicacao) => void;
+  explicacao?: Significado; // já consultada antes (guardada com a legenda)
+  previa?: Significado | null;
+  onExplicado: (e: Significado) => void;
   onFechar: () => void;
 }) {
-  const { ajustes, marcarEstudo } = useAjustes();
-  const lista = useLista();
-  const [exp, setExp] = useState<Explicacao | null>(inicial ?? null);
+  const { ajustes } = useAjustes();
+  const completa = (e?: Significado | null) => !!e?.classe;
+  const [exp, setExp] = useState<Significado | null>(inicial ?? previa ?? null);
   const [erro, setErro] = useState<string | null>(null);
   const chave = ajustes.chaveClaude;
-  const salvo = item.vocabulario.some((p) => p.termo.trim().toLowerCase() === termo.toLowerCase());
+  const { salvo, salvar } = useSalvarTermo(item, termo);
 
   useEffect(() => {
-    if (exp || !chave) return;
+    if (completa(exp) || (exp && !chave)) return;
     let vivo = true;
-    explicarTermo(chave, item.idioma, termo, fala)
+    const pedido = chave
+      ? explicarTermo(chave, item.idioma, termo, fala)
+      : traduzirTermo({ motor: "aparelho", chaveClaude: "" }, item.idioma, termo, fala);
+    pedido
       .then((e) => {
         if (!vivo) return;
         setExp(e);
         onExplicado(e);
       })
-      .catch((e) => vivo && setErro(mensagemErro(e)));
+      .catch((e) => vivo && !exp && setErro(mensagemErro(e)));
     return () => {
       vivo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [termo, fala]);
-
-  const salvar = () => {
-    if (salvo) return;
-    // sem chave a tradução fica vazia: a tradução automática do vocabulário completa depois
-    lista.atualizar(item, {
-      vocabulario: [
-        ...item.vocabulario,
-        exp
-          ? { termo, traducao: exp.traducao, classe: exp.classe, partes: exp.partes || undefined }
-          : { termo, traducao: "" },
-      ],
-    });
-    marcarEstudo();
-  };
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col justify-end" role="dialog" aria-modal aria-label={termo}>
@@ -86,11 +100,19 @@ export function FolhaTermo({
             <p lang={item.idioma} className="text-2xl font-bold break-words">
               {termo}
             </p>
-            {exp && (
+            {exp?.classe ? (
               <p className="text-xs font-semibold text-sub">
                 {NOME_CLASSE[exp.classe] ?? exp.classe}
                 {exp.partes && ` · ${exp.partes}`}
               </p>
+            ) : (
+              exp &&
+              chave &&
+              !erro && (
+                <p className="flex items-center gap-1.5 text-xs text-sub">
+                  <ArrowPathIcon className="size-3 animate-spin" aria-hidden /> Buscando mais detalhes…
+                </p>
+              )
             )}
           </div>
           <BotaoIcone icone={XMarkIcon} rotulo="Fechar" onClick={onFechar} className="-mt-1 -mr-2.5" />
@@ -101,13 +123,9 @@ export function FolhaTermo({
             <p lang="pt-BR">{exp.traducao}</p>
           ) : erro ? (
             <p className="text-sm font-semibold text-erro">{erro}</p>
-          ) : chave ? (
+          ) : (
             <p className="flex items-center gap-2 text-sm text-sub">
               <ArrowPathIcon className="size-4 animate-spin" aria-hidden /> Buscando o significado…
-            </p>
-          ) : (
-            <p className="text-sm text-sub">
-              Adicione a chave do Claude em Ajustes para ver o significado de cada termo.
             </p>
           )}
         </div>
@@ -123,7 +141,7 @@ export function FolhaTermo({
 
         <button
           type="button"
-          onClick={salvar}
+          onClick={() => salvar(exp)}
           disabled={salvo}
           className="mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-caneta-500 text-sm font-bold text-on-caneta transition-transform duration-150 active:scale-[0.98] disabled:bg-card-2 disabled:text-ok"
         >

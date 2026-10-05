@@ -1,10 +1,12 @@
-// Ajustes do app: chaves das APIs (Claude e OpenSubtitles), tradução automática,
-// nível por IA, pré-sincronização das legendas, frente dos flashcards, o último
-// filtro do Explorar e os dias de estudo.
+// Ajustes do app: chaves das APIs (Claude e OpenSubtitles), tradutor de palavras
+// (aparelho ou Claude), tradução automática, nível por IA, pré-sincronização
+// das legendas, frente dos flashcards, o último filtro do Explorar e os dias de
+// estudo.
 // SQLite no aparelho (tabela chave/valor), localStorage no navegador.
 import { Capacitor } from "@capacitor/core";
 import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Frente } from "../lib/anki";
+import type { Motor } from "../lib/tradutor";
 import type { Ordem, Tipo } from "../lib/catalogo";
 import type { Nivel } from "../lib/nivel";
 import { diaLocal } from "../lib/revisao";
@@ -23,6 +25,7 @@ export interface Ajustes {
   chaveClaude: string;
   chaveOpenSubtitles: string;
   sincronizarIA: boolean; // legendas: casar PT ⇄ original com o Haiku
+  tradutor: Motor; // quem traduz palavras: ML Kit no aparelho ou o Claude
   traducaoAuto: boolean;
   nivelIA: boolean;
   frente: Frente;
@@ -34,6 +37,7 @@ const PADRAO: Ajustes = {
   chaveClaude: "",
   chaveOpenSubtitles: "",
   sincronizarIA: false,
+  tradutor: "aparelho",
   traducaoAuto: false,
   nivelIA: false,
   frente: "pt",

@@ -1,6 +1,6 @@
-// Aba Ajustes: chave da API do Claude (Haiku 4.5), tradução automática do
-// vocabulário, nível pelo Claude, legendas (chave do OpenSubtitles e
-// pré-sincronização), frente dos flashcards e backup da lista.
+// Aba Ajustes: tradutor de palavras (aparelho ou Claude), chave da API do Claude
+// (Haiku 4.5), tradução automática do vocabulário, nível pelo Claude, legendas
+// (chave do OpenSubtitles e pré-sincronização), frente dos flashcards e backup.
 import { CheckCircleIcon, ExclamationCircleIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useRef, useState } from "react";
 import { Cabecalho } from "../components/Cabecalho";
@@ -8,6 +8,7 @@ import { nomeArquivo, salvarArquivo } from "../lib/arquivo";
 import { gerarBackup, itensParaRestaurar, juntarDias, lerBackup } from "../lib/backup";
 import { analisarPares, mensagemErro } from "../lib/claude";
 import { diaLocal } from "../lib/revisao";
+import { motorDe } from "../lib/tradutor";
 import { useAjustes } from "../store/ajustes";
 import { useLista } from "../store/ListaContexto";
 import { Ajuda } from "../ui/Ajuda";
@@ -29,10 +30,11 @@ export function Ajustes() {
   const [chave, setChave] = useState<string | null>(null); // rascunho enquanto edita
   const [teste, setTeste] = useState<{ ok: boolean; msg: string } | "testando" | null>(null);
   const valorChave = chave ?? ajustes.chaveClaude;
+  const temTradutor = motorDe({ motor: ajustes.tradutor, chaveClaude: ajustes.chaveClaude }) !== null;
 
   const salvarChave = () => {
     if (chave !== null && chave.trim() !== ajustes.chaveClaude) {
-      mudar({ chaveClaude: chave.trim(), ...(chave.trim() ? {} : { traducaoAuto: false, nivelIA: false }) });
+      mudar({ chaveClaude: chave.trim(), ...(chave.trim() ? {} : { nivelIA: false }) });
       setTeste(null);
     }
     setChave(null);
@@ -52,7 +54,29 @@ export function Ajustes() {
     <>
       <Cabecalho titulo="Ajustes" />
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-2 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+24px)]">
-        <Secao titulo="Tradução automática">
+        <Secao titulo="Tradução">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center">
+              <span className="text-sm font-semibold">Tradutor de palavras</span>
+              <Ajuda rotulo="Sobre o tradutor de palavras">
+                Quem traduz as palavras tocadas nas legendas e completa o vocabulário. O aparelho usa o tradutor do
+                Google (ML Kit) no próprio celular: grátis, instantâneo e offline depois de baixar o idioma (cerca de 30
+                MB, na primeira vez). O Claude gasta tokens da sua chave, mas também traz a classe gramatical e o
+                significado das partes da palavra. Tocando na tradução de uma palavra nas legendas, a folha completa usa
+                o Claude se houver chave.
+              </Ajuda>
+            </div>
+            <Segmentado
+              rotulo="Tradutor de palavras"
+              valor={ajustes.tradutor}
+              onChange={(tradutor) => mudar({ tradutor })}
+              opcoes={[
+                { valor: "aparelho", nome: "Aparelho (grátis)" },
+                { valor: "claude", nome: "Claude" },
+              ]}
+            />
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <CampoChave
               id="chave-claude"
@@ -96,14 +120,15 @@ export function Ajustes() {
               Traduzir automaticamente
             </span>
             <Ajuda rotulo="Sobre a tradução automática">
-              No vocabulário, preencha só a palavra ou só a tradução: ao sair da linha, o outro lado é completado. A
-              palavra também ganha classe gramatical e o significado das partes, usados no baralho do Anki.
+              No vocabulário, preencha só a palavra ou só a tradução: ao sair da linha, o outro lado é completado pelo
+              tradutor escolhido acima. Com o Claude, a palavra também ganha classe gramatical e o significado das
+              partes, usados no baralho do Anki.
             </Ajuda>
             <span className="flex-1" />
             <Switch
               idRotulo="rotulo-auto"
-              ligado={ajustes.traducaoAuto && !!ajustes.chaveClaude}
-              desativado={!ajustes.chaveClaude}
+              ligado={ajustes.traducaoAuto && temTradutor}
+              desativado={!temTradutor}
               onChange={(traducaoAuto) => mudar({ traducaoAuto })}
             />
           </div>

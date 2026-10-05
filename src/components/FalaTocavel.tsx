@@ -1,5 +1,5 @@
 // Fala da legenda com cada palavra tocável (tela Legendas). Toque seleciona a
-// palavra. Segurar começa uma expressão: arrastando, ela se estende até onde o
+// palavra (a tela mostra a tradução num balão sobre ela). Segurar começa uma expressão: arrastando, ela se estende até onde o
 // dedo soltar; sem arrastar, o próximo toque marca a última palavra.
 import { useRef, useState } from "react";
 import type { Token } from "../lib/legenda";
@@ -21,7 +21,8 @@ export function FalaTocavel({
 }: {
   tokens: Token[];
   idioma: string;
-  onSelecionar: (ini: number, fim: number) => void;
+  // `caixa`: retângulo das palavras escolhidas na tela (para posicionar o balão)
+  onSelecionar: (ini: number, fim: number, caixa: DOMRect) => void;
   className?: string;
 }) {
   // âncora da expressão em andamento e a palavra até onde ela vai
@@ -39,9 +40,20 @@ export function FalaTocavel({
     return el ? Number(el.dataset.i) : null;
   };
 
+  const fala = useRef<HTMLParagraphElement>(null);
   const terminar = (ini: number, fim: number) => {
     setFaixa(null);
-    onSelecionar(Math.min(ini, fim), Math.max(ini, fim));
+    const [a, b] = [Math.min(ini, fim), Math.max(ini, fim)];
+    const rs = [...(fala.current?.querySelectorAll<HTMLElement>("[data-i]") ?? [])]
+      .filter((el) => Number(el.dataset.i) >= a && Number(el.dataset.i) <= b)
+      .map((el) => el.getBoundingClientRect());
+    const esq = Math.min(...rs.map((r) => r.left));
+    const topo = Math.min(...rs.map((r) => r.top));
+    onSelecionar(
+      a,
+      b,
+      new DOMRect(esq, topo, Math.max(...rs.map((r) => r.right)) - esq, Math.max(...rs.map((r) => r.bottom)) - topo),
+    );
   };
 
   const [a, b] = faixa ? [Math.min(faixa.ancora, faixa.ate), Math.max(faixa.ancora, faixa.ate)] : [-1, -1];
@@ -49,6 +61,7 @@ export function FalaTocavel({
   return (
     <div>
       <p
+        ref={fala}
         lang={idioma}
         className={cn("touch-none select-none [-webkit-touch-callout:none]", className)}
         onContextMenu={(e) => e.preventDefault()}

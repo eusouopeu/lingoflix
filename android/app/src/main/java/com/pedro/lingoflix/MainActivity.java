@@ -7,8 +7,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // plugin local (abre o título no app do streaming): registrar antes do super
+        // plugins locais (abre o título no app do streaming; tradutor do
+        // aparelho com ML Kit): registrar antes do super
         registerPlugin(AbrirNoApp.class);
+        registerPlugin(Tradutor.class);
         super.onCreate(savedInstanceState);
     }
 }

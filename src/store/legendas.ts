@@ -3,8 +3,9 @@
 // legenda é baixada uma vez só (a cota do OpenSubtitles é pequena).
 // SQLite no aparelho (JSON numa tabela chave/dados), localStorage no navegador.
 import { Capacitor } from "@capacitor/core";
-import type { Explicacao } from "../lib/claude";
+
 import type { Fala } from "../lib/legenda";
+import type { Significado } from "../lib/tradutor";
 import { abrirBanco } from "./banco";
 
 export interface Legenda {
@@ -16,7 +17,7 @@ export interface Legenda {
   ia: boolean; // casamento feito pelo Haiku (não só pelo tempo)
   origem: { original: string; pt: string }; // nome do release ou "importado"
   posicao: number; // ms onde parou
-  termos: Record<string, Explicacao>; // "fala|termo" → significado
+  termos: Record<string, Significado>; // "fala|termo" → significado
 }
 
 export const chaveLegenda = (chaveTitulo: string, temporada?: number, episodio?: number) =>

@@ -232,5 +232,7 @@ export function mensagemErro(e: unknown): string {
   if (e instanceof Anthropic.RateLimitError) return "Limite de uso da API atingido. Tente mais tarde.";
   if (e instanceof Anthropic.APIConnectionError) return "Sem conexão com a API.";
   if (e instanceof Anthropic.APIError) return `Erro da API (${e.status}).`;
+  // erros do tradutor do aparelho (plugin) já vêm com a mensagem pronta
+  if (e instanceof Error && e.message) return e.message;
   return "Não foi possível traduzir.";
 }

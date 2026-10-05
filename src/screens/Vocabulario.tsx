@@ -20,7 +20,8 @@ import { Metadados, Poster, TituloEOriginal, useDetalhes } from "../components/p
 import { csvAnki } from "../lib/anki";
 import { nomeArquivo, salvarArquivo } from "../lib/arquivo";
 import { IDIOMAS } from "../lib/catalogo";
-import { analisarPares, mensagemErro } from "../lib/claude";
+import { mensagemErro } from "../lib/claude";
+import { completarPares, motorDe } from "../lib/tradutor";
 import { contarPalavras, limparPares, type Par } from "../lib/vocabulario";
 import { useAjustes } from "../store/ajustes";
 import { useLista } from "../store/ListaContexto";
@@ -115,7 +116,9 @@ function Conteudo({
   const espera = useRef<number>(undefined);
   const ultimo = useRef(item);
   ultimo.current = item;
-  const auto = ajustes.traducaoAuto && !!ajustes.chaveClaude;
+  const config = { motor: ajustes.tradutor, chaveClaude: ajustes.chaveClaude };
+  const motor = motorDe(config);
+  const auto = ajustes.traducaoAuto && motor !== null;
 
   const salvar = (ls: Linha[]) => {
     const limpos = limparPares(semChave(ls));
@@ -143,15 +146,17 @@ function Conteudo({
       comLinhaNova(ls.map((l) => (l.k === k ? { ...l, [campo]: valor, classe: undefined, partes: undefined } : l))),
     );
 
-  // Saiu da linha: com a tradução automática ligada, completa o lado vazio e
-  // classifica a palavra (só se ainda não tiver classe).
+  // Saiu da linha: com a tradução automática ligada, completa o lado vazio e,
+  // com o Claude, classifica a palavra (só se ainda não tiver classe).
   const traduzir = async (k: number) => {
     const l = linhas.find((x) => x.k === k);
-    if (!auto || !l || l.traduzindo || l.classe || !(l.termo.trim() || l.traducao.trim())) return;
+    if (!auto || !l || l.traduzindo || !(l.termo.trim() || l.traducao.trim())) return;
+    const completo = !!(l.termo.trim() && l.traducao.trim());
+    if (completo && (l.classe || motor === "aparelho")) return;
     setLinhas((ls) => ls.map((x) => (x.k === k ? { ...x, traduzindo: true } : x)));
     setErro(null);
     try {
-      const [r] = await analisarPares(ajustes.chaveClaude, item.idioma, [l]);
+      const [r] = await completarPares(config, item.idioma, [l]);
       setLinhas((ls) =>
         ls.map((x) =>
           x.k !== k
@@ -178,12 +183,12 @@ function Conteudo({
     setErro(null);
     try {
       let pares = limparPares(semChave(linhas));
-      // pares sem classe (escritos com a tradução automática desligada) são
-      // classificados agora, numa chamada só, se houver chave
-      const faltam = pares.filter((p) => !p.classe || !p.termo || !p.traducao);
-      if (ajustes.chaveClaude && faltam.length) {
+      // pares incompletos (ou sem classe, com o Claude) são completados agora,
+      // numa chamada só, pelo tradutor escolhido
+      const faltam = pares.filter((p) => (motor === "claude" && !p.classe) || !p.termo || !p.traducao);
+      if (motor && faltam.length) {
         try {
-          const prontos = await analisarPares(ajustes.chaveClaude, item.idioma, faltam);
+          const prontos = await completarPares(config, item.idioma, faltam);
           pares = pares.map((p) => (faltam.includes(p) ? prontos[faltam.indexOf(p)] : p));
           setLinhas(comLinhaNova(pares.map((p) => linha(p))));
           lista.atualizar(ultimo.current, { vocabulario: pares });
